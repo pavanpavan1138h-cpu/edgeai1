@@ -1,0 +1,341 @@
+================================================================================
+EDGE AI - MODULE 1: SMART DOORBELL BATTERY-LIFE PREDICTION
+END-TO-END PROJECT CHRONOLOGY, CHAT HISTORY & EXPERIMENT LOG
+================================================================================
+Team Number : 3
+Team Name   : Phoenix
+Members     : Pavan R, Shreyank D K, Adarsh K R, Ankitha A
+Assigned CSV: data/team_03_train.csv (2,000 raw rows)
+Target      : days_left (Continuous remaining battery life in days)
+Features    : battery_v, temp_c, rings_per_day, wifi_rssi_dbm, age_months
+Environment : Conda environment 'edgeai1' (Python 3.11, PyTorch 2.15, macOS)
+Scope Note  : Physical ESP32 microcontroller deployment is confirmed OUT OF SCOPE.
+              Theoretical MCU feasibility analysis is retained for Edge AI sizing.
+
+================================================================================
+CHRONOLOGICAL PROJECT WORKFLOW & CONVERSATION TRAJECTORY
+================================================================================
+
+--------------------------------------------------------------------------------
+SESSION 1: REPOSITORY INSPECTION & ENVIRONMENT INITIALIZATION
+--------------------------------------------------------------------------------
+- User Instruction:
+    Inspect existing workspace directory, establish working experiment log 
+    (notebook/log.txt), create dedicated dataset inspection notebook, and create 
+    conda virtual environment named 'edgeai1'.
+- Actions Taken:
+    1. Scanned project directory structure: verified data/team_03_train.csv,
+       starter training pipeline train.py, FastAPI microservice app/main.py,
+       PyTorch model definition app/model.py, and benchmark client client/bench.py.
+    2. Created Conda environment:
+       conda create -n edgeai1 python=3.11 -y
+       Installed dependencies: torch, torchvision, torchaudio, fastapi, uvicorn,
+       scikit-learn, pandas, numpy, matplotlib, jupyter, ipykernel.
+    3. Created notebook/log.txt and notebook/dataset_inspection.ipynb.
+
+--------------------------------------------------------------------------------
+SESSION 2: DATA INSPECTION & SENSOR GLITCH DISCOVERY (MISSION 1)
+--------------------------------------------------------------------------------
+- User Instruction:
+    Perform strict, read-only data inspection in notebook/dataset_inspection.ipynb.
+    Audit data schema, check missing values, check duplicates, detect anomalies,
+    and formulate domain-grounded provisional filtering rules.
+- Actions Taken & Findings:
+    1. Raw dimensions: 2,000 rows × 6 columns.
+    2. Null / Missing Values: Exactly 0 missing values across all columns.
+    3. Duplicate Rows: Exactly 0 duplicates (2,000 unique telemetry snapshots).
+    4. Hardware Glitch Detection & Domain Analysis:
+       a) battery_v == 0.0 V (9 rows)
+          - Physical Reason: Li-ion cell operates between ~3.3V and 4.2V. 
+            0.0V indicates ADC / brownout dropout during packet transmission.
+       b) temp_c == -127.0 °C (5 rows)
+          - Physical Reason: -127°C is a digital 1-Wire bus error code (0x80/0x81)
+            signifying disconnected temperature sensor. Ambient range is 8°C–46°C.
+       c) wifi_rssi_dbm == 0 dBm (10 rows)
+          - Physical Reason: RSSI is logarithmic negative dBm (-88 to -45 dBm).
+            0 dBm represents an unassociated/unconnected Wi-Fi driver default.
+       d) Overlap Audit: Overlap between rules is exactly 0 (disjoint rows).
+       e) Total Glitch Rows Dropped: 24 rows (1.20% of dataset).
+       f) Clean Dataset Retained: 1,976 rows (98.80% of dataset).
+    5. Valid Extremes Kept:
+       - rings_per_day = 38 (valid high-traffic activity surge).
+       - days_left = 0.1 (valid near-shutdown operating state).
+    6. Provisional Heuristic Disclaimer:
+       Explicitly documented that these rules are domain-grounded provisional
+       heuristics and were not physically verified on faulty hardware in a lab.
+
+--------------------------------------------------------------------------------
+SESSION 3: EXPLORATORY DATA ANALYSIS (EDA) & BASELINE BENCHMARKS
+--------------------------------------------------------------------------------
+- User Instruction:
+    Perform comprehensive EDA in notebook/eda.ipynb. Analyze univariate feature
+    distributions, investigate bivariate relationships, detect non-linearities,
+    examine correlation caveats, and establish classical statistical baselines.
+- Actions Taken & Findings:
+    1. Distribution Characteristics:
+       - Target `days_left`: Mean = 65.93d, Median = 55.25d, Std = 57.88d,
+         Min = 0.1d, Max = 317.1d, Skewness = +1.173 (positive/right-skewed).
+       - Feature distributions: temp_c is Gaussian; rings_per_day is Poisson-like;
+         battery_v is positively skewed towards operational plateau.
+    2. Non-Linear Feature Relationships:
+       - Discovered the crucial "Lithium Discharge Knee" around 3.5V–3.6V:
+         above 3.7V voltage is relatively flat; below 3.5V voltage collapses steeply.
+       - Inverse activity scaling (~1/x) between rings_per_day and days_left.
+       - Disproportionate RF power drain scaling at weak RSSI (< -80 dBm).
+    3. Pearson Correlation vs. Physical Causality:
+       - battery_v (+0.730), rings_per_day (-0.264), age_months (-0.218),
+         wifi_rssi_dbm (+0.198), temp_c (-0.065).
+       - Documented that correlation != causation, and that Pearson r only measures
+         linear association, underestimating curved relationships like the knee.
+    4. Baseline Model Benchmarks (80/20 train/val split, seed 0):
+       - Baseline 1 (Predict Training Mean = 65.98d):
+         Validation MAE = 47.58 days | Validation MSE = 3,354.21
+       - Baseline 2 (OLS Linear Regression via np.linalg.lstsq):
+         Validation MAE = 20.54 days | Validation MSE = 792.14
+         Fitted equation: days_left = 181.90*V - 0.25*T - 2.56*R + 1.50*RSSI - 1.02*Age - 477.72
+         Failure modes: severely overpredicts at low voltages (< 3.6V), cannot bend
+         at the discharge knee, and ignores multi-variable interaction terms.
+
+--------------------------------------------------------------------------------
+SESSION 4: MISSION 2 / EXPERIMENT 1 — INITIAL NEURAL NETWORK
+--------------------------------------------------------------------------------
+- User Instruction:
+    Implement, standardize, and train the baseline neural network (5 -> 32 -> 32 -> 1)
+    on the Team 3 dataset. Evaluate convergence, overfitting, and calculate exact
+    trainable parameters, MACs, and memory footprints.
+- Actions Taken & Findings:
+    1. Architecture: 5 inputs -> Linear(5, 32) + ReLU -> Linear(32, 32) + ReLU -> Linear(32, 1).
+    2. Standardization Integrity: Normalization statistics (mu, sigma) computed strictly
+       from the 1,581 training records. Zero validation data leakage.
+    3. Training Configuration: Adam (lr = 3e-3), batch_size = 128, epochs = 1,500,
+       loss = MSE, seed = 0.
+    4. Quantitative Results:
+       - Training MAE = 3.60 days (MSE = 30.29).
+       - Validation MAE = 4.13 days (4.1275d exact, MSE = 36.24).
+       - Lowest validation MAE during training: 3.96 days at Epoch 979.
+       - Saved checkpoint state: Final Epoch 1499 weights unconditionally saved
+         to model/model.pt (4.13d MAE).
+       - Error reduction: 79.9% reduction over Linear Regression; 91.3% over Mean.
+       - Generalization gap: Train MAE (3.60d) vs Val MAE (4.13d) gap is only 0.53d.
+    5. Complexity Derivation:
+       - Layer 1: 5 * 32 + 32 = 192 params | 160 MACs | 768 B FP32
+       - Layer 2: 32 * 32 + 32 = 1,056 params | 1,024 MACs | 4,224 B FP32
+       - Layer 3: 32 * 1 + 1 = 33 params | 32 MACs | 132 B FP32
+       - Total: 1,281 parameters | 1,216 MACs | 5,124 bytes FP32 (5.00 KB) | 1,281 B INT8.
+
+--------------------------------------------------------------------------------
+SESSION 5: DIAGNOSTIC RESIDUAL & DISTRIBUTION AUDIT (EXP-004)
+--------------------------------------------------------------------------------
+- User Instruction:
+    Perform an exhaustive 14-point scientific audit on the frozen saved checkpoint
+    model/model.pt without retraining. Verify reproducibility, analyze error distributions,
+    audit physical sanity (negative outputs), and evaluate operating regimes.
+- Actions Taken & Findings:
+    1. Checkpoint Verification: Loading model/model.pt in isolation reproduced
+       exactly Validation MAE = 4.1275 days and MSE = 36.2441 on the 395 unseen records.
+    2. Distribution Skewness:
+       - Median Absolute Error = 2.4197 days (50% of predictions within 2.42 days).
+       - 75% of validation errors are below 4.80 days.
+       - Confirms the headline MAE (4.13d) is inflated by rare high-lifespan outliers.
+    3. Physical Prediction Sanity Audit:
+       - Detected 12 raw negative predictions (3.04% of validation cases, min = -1.38d).
+       - Root cause: unconstrained linear output neuron on dead batteries (y <= 0.8d).
+       - Resolution: production serving enforces output clamping: np.maximum(y_hat, 0.0).
+    4. Sliced Operational Regimes:
+       - 0–10 days window (N=85, 21.5% of val): MAE = 1.193d, Median AE = 1.035d.
+       - > 120 days window (N=72): MAE = 8.66d.
+       - Physical reason: heteroscedasticity due to the flat discharge plateau where
+         dV/dt ≈ 0 makes fresh batteries noisier to separate from instantaneous telemetry.
+    5. Diagnostic Plots Embedded in notebook/eda.ipynb:
+       - Figure 9: Actual vs. Predicted Parity Plot.
+       - Figure 10: Residuals vs. Actual Lifespan Dispersion Plot.
+       - Figure 11: Absolute Error Profile across Regimes.
+       - Figure 12: Dual-Panel Error Distributions (Residual KDE & Absolute Error Skew).
+
+--------------------------------------------------------------------------------
+SESSION 6: SCOPE CLARIFICATION — PHYSICAL ESP32 DEPLOYMENT OUT OF SCOPE
+--------------------------------------------------------------------------------
+- User Instruction:
+    Update project scope consistently across documentation. Clarify that physical
+    ESP32-S3 deployment, C++ firmware development, hardware wiring, and on-device
+    oscilloscope profiling are NOT required for this assignment.
+- Actions Taken:
+    1. Confirmed required scope: Data auditing, baseline modeling, neural network
+       sweeps, multi-seed repeatability, model selection, FastAPI microservice
+       serving (app/main.py), client latency benchmarking (client/bench.py), and docs.
+    2. Embedded microcontroller analysis (~300 KB SRAM, 240 MHz clock) is formally
+       designated as a theoretical feasibility study to motivate compact model sizing.
+    3. Updated README.md, docs/README.md, and all relevant documentation files.
+
+--------------------------------------------------------------------------------
+SESSION 7: PHASE 7 — ARCHITECTURE EXPERIMENTS SWEEP 1 (EXP-005)
+--------------------------------------------------------------------------------
+- User Instruction:
+    Conduct a systematic architecture sweep comparing 1-hidden-layer and 2-hidden-layer
+    networks across widths 4, 8, 16, 32, 64 under identical controls (1,500 epochs, seed 0).
+    Map the Pareto efficiency frontier and save all weights, CSVs, and plots.
+- Actions Taken & Findings:
+    1. Built standalone runner experiments/architecture_sweep_1.py. Evaluated 10 models.
+    2. Key Observations:
+       - Depth dominates width: Single-layer models with widths 8, 16, 64 plateaued
+         at ~15.5 days MAE due to inability to resolve the non-linear discharge knee.
+         Two-layer models converged smoothly within 300 epochs.
+       - Overfitting at width 64: 2-Layer (64, 64) had 4,609 params and train MAE 3.27d,
+         but validation MAE degraded to 4.55d (overfitting).
+       - Standout tiny model: 2-Layer (8, 8) reached 5.08d MAE with only 129 params
+         (90% parameter reduction vs reference model).
+       - Standout compact model: 2-Layer (16, 16) reached 4.78d MAE with 385 params
+         (70% parameter reduction vs reference model).
+       - Reference replication: 2-Layer (32, 32) replicated 4.13d MAE (1,281 params).
+    3. Pareto Frontier: Identified 5 non-dominated models:
+       1L-4 (10.53d), 2L-4-4 (8.08d), 2L-8-8 (5.08d), 2L-16-16 (4.78d), 2L-32-32 (4.13d).
+    4. Generated 4 sweep figures (Figures 1–4) in experiments/sweep_1_results/:
+       val_mae_vs_params.png, val_mae_vs_macs.png, convergence_curves.png, pareto_bubble_chart.png.
+    5. Shortlisted 3 candidates for multi-seed repeatability: 8–8, 16–16, 32–32.
+
+--------------------------------------------------------------------------------
+SESSION 8: PHASE 7.2 — SHORTLIST MULTI-SEED REPEATABILITY (EXP-006)
+--------------------------------------------------------------------------------
+- User Instruction:
+    Evaluate the repeatability of the 3 shortlisted models across 5 training random
+    seeds (0, 1, 2, 3, 4). Keep data split (seed 0) and normalization fixed.
+    Verify whether observed rankings remain consistent across initializations.
+- Actions Taken & Findings:
+    1. Built standalone runner experiments/shortlist_repeatability.py. Executed 15 runs.
+    2. Verified and safely reused EXP-005 seed-0 runs; trained seeds 1–4 anew.
+    3. Verified Bessel's correction in code: np.std(val_maes, ddof=1).
+    4. Aggregate Multi-Seed Summary (Mean ± Sample Std across 5 seeds):
+       - 2-Layer (32, 32): Mean Val MAE = 4.2575d ± 0.1556d | Low-Batt MAE = 1.2766d ± 0.2332d
+         (1,281 params, 1,216 MACs, 5,124 B FP32). Highly stable reference.
+       - 2-Layer (16, 16): Mean Val MAE = 4.4549d ± 0.2005d | Low-Batt MAE = 1.2213d ± 0.2526d
+         (385 params, 352 MACs, 1,540 B FP32). Near-parity with reference (gap = 0.20d / 4.74h)
+         and achieves lower error in the critical low-battery regime!
+       - 2-Layer (8, 8): Mean Val MAE = 5.6551d ± 1.3166d | Low-Batt MAE = 1.8028d ± 0.5089d
+         (129 params, 112 MACs, 516 B FP32). Seeds 0–3 averaged 5.07d, but seed 4
+         stalled at 7.99d due to dead-ReLU optimization sensitivity.
+    5. Generated 4 repeatability figures (Figures 5–8) in experiments/shortlist_repeatability/:
+       val_mae_per_seed.png, architecture_comparison_bars.png,
+       low_battery_mae_comparison.png, mean_mae_vs_params.png.
+
+--------------------------------------------------------------------------------
+SESSION 9: MATHEMATICAL METHODOLOGY & COMPLEXITY DERIVATIONS
+--------------------------------------------------------------------------------
+- User Instruction:
+    Create dedicated mathematical methodology documentation. Formally define MAE,
+    MSE, RMSE, MedAE, bias, sample standard deviation (ddof=1), parameter counting,
+    MAC counting, memory estimates (FP32/INT8), and percentage reduction formulas
+    with worked examples for all architectures.
+- Actions Taken:
+    1. Created docs/10_mathematical_methodology.md (18,844 bytes).
+    2. Derived parameter formulas: P = n_in * n_out + n_out for all 10 sweep models.
+    3. Derived MAC formulas: MACs = n_in * n_out for all 10 sweep models.
+    4. Formulated theoretical memory footprints: Params * 4 bytes (FP32) and * 1 byte (INT8).
+    5. Provided worked numerical examples for 16–16 vs. 32–32:
+       - Parameter reduction: (1281 - 385)/1281 * 100 = 69.95% fewer parameters.
+       - MAC reduction: (1216 - 352)/1216 * 100 = 71.05% fewer operations.
+       - Accuracy trade-off: 4.4549d - 4.2575d = 0.1974 days = 4.74 hours.
+       - Sample std dev calculation with N-1=4 divisor verified step-by-step.
+
+--------------------------------------------------------------------------------
+SESSION 10: MULTI-OBJECTIVE MODEL SELECTION & REASONING CHAIN
+--------------------------------------------------------------------------------
+- User Instruction:
+    Document the complete model selection decision process. Formulate the 9-step
+    reasoning chain, build the 12-dimensional decision matrix, compare 8–8, 16–16,
+    and 32–32, and justify why 16–16 is the recommended engineering compromise.
+- Actions Taken:
+    1. Created docs/09_model_selection.md (18,586 bytes).
+    2. Formulated the 9-Step Selection Reasoning Chain:
+       Step 1: Reject non-converging 1-layer networks (underfitting).
+       Step 2: Reject overparameterized 64-width networks (overfitting).
+       Step 3: Establish the 2-layer hierarchical feature composition advantage.
+       Step 4: Isolate the empirical Pareto frontier.
+       Step 5: Test multi-seed repeatability across random initializations.
+       Step 6: Penalize initialization fragility (seed 4 of 8–8).
+       Step 7: Quantify the Edge AI diminishing returns threshold (elbow at 16–16).
+       Step 8: Validate safety-critical domain accuracy (low-battery regime).
+       Step 9: Formulate tri-tier production architecture.
+    3. Tri-Tier Recommendation:
+       - Recommended Engineering Compromise: 2-Layer (16, 16).
+       - Accuracy Reference Benchmark: 2-Layer (32, 32).
+       - Lightweight Alternative: 2-Layer (8, 8).
+    4. Methodological Precision: Explicitly stated that 16–16 is an engineering
+       trade-off, not a claim of formal statistical superiority (avoided unverified
+       claims of "statistical significance" with N=5 seeds).
+
+--------------------------------------------------------------------------------
+SESSION 11: COMPREHENSIVE 11-MODULE DOCUMENTATION OVERHAUL
+--------------------------------------------------------------------------------
+- User Instruction:
+    Perform a complete audit and consolidation of all project documentation.
+    Ensure another student or evaluator can understand and reproduce everything.
+    Structure into 11 dedicated documents, preserve teammate deployment, audit
+    all figures and tables, and establish a reproducibility checklist.
+- Actions Taken:
+    1. Preserved teammate FastAPI deployment specification in docs/teammate_edge_deployment.md.
+    2. Created docs/08_repeatability.md for dedicated EXP-006 reporting.
+    3. Created docs/09_model_selection.md for formal model selection.
+    4. Created docs/11_assumptions_and_reproducibility.md containing the 16-point
+       assumptions matrix, claim epistemology, team division, and verified commands.
+    5. Streamlined docs/07_architecture_experiments.md for EXP-005.
+    6. Enhanced docs/06_diagnostics.md with standardized Figure 9–12 breakdowns.
+    7. Synchronized docs/experiment_log.md, docs/README.md, and root README.md.
+    8. Verified 100% integrity of raw CSV, PyTorch checkpoints, and source scripts.
+
+================================================================================
+COMPLETE REPRODUCIBILITY SUMMARY & ARTIFACT DIRECTORY
+================================================================================
+
+1. DATASETS & NOTEBOOKS:
+   - data/team_03_train.csv         : 2,000 raw rows (Untouched)
+   - notebook/dataset_inspection.ipynb : Glitch filtering verification
+   - notebook/eda.ipynb             : EDA, baselines & diagnostic audit
+   - notebook/log.txt               : Working lab log (this document)
+
+2. SCRIPTS & SOURCE CODE:
+   - train.py                       : Baseline training pipeline (Untouched)
+   - app/model.py                   : PyTorch BatteryNet MLP (Untouched)
+   - app/main.py                    : FastAPI live serving microservice (Untouched)
+   - client/bench.py                : Client benchmark tool (Untouched)
+   - experiments/architecture_sweep_1.py : EXP-005 Sweep runner (10 models)
+   - experiments/shortlist_repeatability.py : EXP-006 Repeatability runner (15 runs)
+
+3. SAVED MODEL WEIGHTS & CONFIGURATIONS:
+   - model/model.pt                 : Production checkpoint (32-32, 7,869 bytes, Untouched)
+   - model/config.json              : Production config & normalization stats (Untouched)
+   - experiments/sweep_1_results/   : 10 candidate weight files (weights_*.pt)
+   - experiments/shortlist_repeatability/ : 15 repeatability weight files
+
+4. PUBLICATION-QUALITY FIGURES (12 TOTAL):
+   - Figure 1: experiments/sweep_1_results/val_mae_vs_params.png
+   - Figure 2: experiments/sweep_1_results/val_mae_vs_macs.png
+   - Figure 3: experiments/sweep_1_results/convergence_curves.png
+   - Figure 4: experiments/sweep_1_results/pareto_bubble_chart.png
+   - Figure 5: experiments/shortlist_repeatability/val_mae_per_seed.png
+   - Figure 6: experiments/shortlist_repeatability/architecture_comparison_bars.png
+   - Figure 7: experiments/shortlist_repeatability/low_battery_mae_comparison.png
+   - Figure 8: experiments/shortlist_repeatability/mean_mae_vs_params.png
+   - Figure 9: notebook/eda.ipynb (Actual vs. Predicted Lifespan Parity Plot)
+   - Figure 10: notebook/eda.ipynb (Residual Dispersion Plot)
+   - Figure 11: notebook/eda.ipynb (Absolute Error Profile across Regimes)
+   - Figure 12: notebook/eda.ipynb (Dual-Panel Residual & Absolute Error Distributions)
+
+5. FORMAL 11-MODULE DOCUMENTATION SUITE:
+   - docs/README.md                 : Documentation master index & navigation roadmap
+   - docs/experiment_log.md         : Chronological experiment register (EXP-001 to EXP-006)
+   - docs/01_problem_definition.md  : Problem statement & Edge AI framing
+   - docs/02_dataset_and_data_quality.md : Data auditing & 24 provisional sensor glitches
+   - docs/03_eda_and_baselines.md   : Distributions, discharge knees, Mean & OLS baselines
+   - docs/04_model_development.md   : Neural network theory & train-only standardisation
+   - docs/05_experiment_1_initial_nn.md : Baseline MLP (5 → 32 → 32 → 1) report
+   - docs/06_diagnostics.md         : 14-point diagnostic residual audit (Figures 9–12)
+   - docs/07_architecture_experiments.md : Architecture sweep EXP-005 (Figures 1–4)
+   - docs/08_repeatability.md       : Multi-seed repeatability EXP-006 (Figures 5–8)
+   - docs/09_model_selection.md     : 9-step selection reasoning chain & decision matrix
+   - docs/10_mathematical_methodology.md : Mathematical formulas, MACs & parameter derivations
+   - docs/11_assumptions_and_reproducibility.md : 16-point assumptions matrix & verified commands
+   - docs/teammate_edge_deployment.md : Preserved FastAPI serving & benchmark client protocol
+
+================================================================================
+END OF LOG FILE — ALL EXPERIMENTS VERIFIED & REPRODUCIBLE
+================================================================================
