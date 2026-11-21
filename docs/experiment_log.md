@@ -173,7 +173,7 @@ Subject the frozen saved checkpoint (`model/model.pt`) to an exhaustive diagnost
 ### 2. Summary of Key Audit Findings
 1. **Discrepancy Resolution:** Checkpoint was verified in isolation, reproducing exactly **Validation $\text{MAE} = 4.1275\text{ days}$** ($4.13\text{d}$), **$\text{MSE} = 36.2441$**, and **$\text{RMSE} = 6.0203\text{ days}$**.
 2. **Median vs Mean Error:** While the mean MAE is $4.13\text{ days}$, the **Median Absolute Error is only $2.42\text{ days}$**. Over 50% of predictions are within $2.42\text{ days}$ of reality; the mean is pulled upward by high-lifespan outliers.
-3. **Imminent Depletion Precision ($0 - 10\text{ days}$):** In the safety-critical window ($85\text{ validation samples}$), the model achieves **$\text{MAE} = 1.193\text{ days}$** and **$\text{Median AE} = 1.035\text{ days}$**.
+3. **Imminent Depletion Precision ($0 - 10\text{ days}$):** In the near-depletion evaluation subset ($0 - 10\text{ days}$, $85\text{ validation samples}$), the model achieves **$\text{MAE} = 1.193\text{ days}$** and **$\text{Median AE} = 1.035\text{ days}$**.
 4. **Physical Sanity Warning (12 Negative Outputs):** 12 predictions ($3.04\%$) produced raw negative days (range: $-0.03\text{d}$ to $-2.68\text{d}$). All 12 occur exclusively when the battery is near cutoff ($0.4\text{d} - 1.6\text{d}$ actual life) due to the unconstrained linear output neuron and global negative bias ($-1.22\text{d}$).
 5. **Mitigation in Production:** Clamped via `np.maximum(y, 0)` in `app/main.py`.
 6. **Worst-Case Error Profile:** The top 10 worst errors occurred exclusively on devices with $> 75\text{ days}$ remaining (maximum error $26.33\text{ days}$ on a device with $137.6\text{ days}$ actual life). Zero low-battery failures were detected.
@@ -255,7 +255,7 @@ Evaluate the repeatability and stability of the three shortlisted architectures 
 
 ### 4. Key Findings & Updated Recommendations
 1. **Hierarchy Preservation:** Model hierarchy observed in Sweep 1 is confirmed: 32–32 ($4.26\text{d}$) < 16–16 ($4.45\text{d}$) < 8–8 ($5.66\text{d}$).
-2. **The 16–16 Parity Discovery:** `2-Layer (16, 16)` delivers near-identical accuracy to the reference model (only $0.20\text{ days}$ mean difference) and actually achieves lower error in the low-battery safety regime ($1.22\text{d}$ vs $1.28\text{d}$), while slashing parameters by **$70\%$** ($385$ vs $1,281$).
+2. **The 16–16 Parity Discovery:** `2-Layer (16, 16)` delivers near-identical accuracy to the reference model (only $0.20\text{ days}$ mean difference) and actually achieves lower error in the low-battery / near-depletion evaluation subset ($1.22\text{d}$ vs $1.28\text{d}$), while slashing parameters by **$70\%$** ($385$ vs $1,281$).
 3. **8–8 Seed Sensitivity:** 8–8 clustered tightly at $\approx 5.07\text{d}$ on seeds 0–3, but plateaued at $7.99\text{d}$ on seed 4, revealing that 8 hidden units provide narrow parameter headroom with heightened sensitivity to initial weights.
 4. **Final Recommendation:** `2-Layer (16, 16)` is designated as the primary edge-optimized model, while `2-Layer (32, 32)` remains the accuracy benchmark.
 

@@ -40,7 +40,7 @@ SECTION 1: EXPERIMENTAL RESULTS & MILESTONES SUMMARY
    • Reproduced Validation MAE = 4.1275 days, MSE = 36.2441, RMSE = 6.0203 days
    • Median Absolute Error = 2.4197 days (50% of errors within 2.42 days)
    • Low-Battery Regime (0-10 days, N=85): MAE = 1.193 days, Median AE = 1.035 days
-   • Raw negative predictions: 12 cases (3.04%, min -1.38d), clipped to 0 in serving
+   • Raw negative predictions: 12 cases (3.04%, min -2.6801d, actual 0.4–1.6d), non-negative clipping verified in teammate app/main.py serving code
 
 5. PHASE 7 ARCHITECTURE SWEEP (EXP-005, 10 Models, Seed 0):
    • 1-Layer (4)     : Params=29,   MACs=24,   Val MAE=10.53d [PARETO]
@@ -195,8 +195,8 @@ edge_ai_assignment1/
 │   └── log.txt                    # Mission & experiment tracking log
 ```
 
-- [notebook/dataset_inspection.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/dataset_inspection.ipynb)
-- [notebook/log.txt](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/log.txt)
+- [notebook/dataset_inspection.ipynb](notebook/dataset_inspection.ipynb)
+- [notebook/log.txt](notebook/log.txt)
 
 ---
 
@@ -261,7 +261,7 @@ edge_ai_assignment1/
 
 ---
 
-### 1. 🔍 [dataset_inspection.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/dataset_inspection.ipynb) *(Inspection ONLY)*
+### 1. 🔍 [dataset_inspection.ipynb](notebook/dataset_inspection.ipynb) *(Inspection ONLY)*
 This notebook focuses purely on **data integrity, hardware domain physics, and glitch isolation**:
 * **Schema & Types:** Ingestion of `data/team_03_train.csv` (2,000 rows, 6 columns), datatypes, memory usage, checking for missing/NaN values and duplicates.
 * **Descriptive & Percentile Auditing:** Mean, standard deviation, and full quantile distribution (1%, 5%, 25%, 50%, 75%, 95%, 99%).
@@ -279,7 +279,7 @@ This notebook focuses purely on **data integrity, hardware domain physics, and g
 
 ---
 
-### 2. 📊 [eda.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/eda.ipynb) *(EDA & Mission 1 Baselines)*
+### 2. 📊 [eda.ipynb](notebook/eda.ipynb) *(EDA & Mission 1 Baselines)*
 This notebook handles the **visualizations, non-linear analysis, and baseline modeling**:
 * **Univariate Distributions:** Histograms and KDE plots for all 5 features and `days_left`.
 * **Bivariate & Non-Linearity Analysis:**
@@ -882,7 +882,7 @@ This is an inspection-only task. No cleaning decisions should be made yet.
 
 --------------------------------------------------------------------------------
 [ASSISTANT RESPONSE / DELIVERABLE SUMMARY]
-The missing-value and duplicate inspection sections have been added to [notebook/dataset_inspection.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/dataset_inspection.ipynb), preserving the notebook structure and leaving the original DataFrame `df` completely untouched.
+The missing-value and duplicate inspection sections have been added to [notebook/dataset_inspection.ipynb](notebook/dataset_inspection.ipynb), preserving the notebook structure and leaving the original DataFrame `df` completely untouched.
 
 Here are the exact outputs obtained from the Team 3 dataset:
 
@@ -990,7 +990,7 @@ Here is the complete, step-by-step summary of everything performed and discovere
 ### 📌 Overview & Scope
 * **Team:** 3 — **Phoenix** (Pavan R, Shreyank D K, Adarsh K R, Ankitha A)
 * **Dataset File:** `data/team_03_train.csv`
-* **Notebook:** [notebook/dataset_inspection.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/dataset_inspection.ipynb)
+* **Notebook:** [notebook/dataset_inspection.ipynb](notebook/dataset_inspection.ipynb)
 * **Rule Followed:** **Inspection only.** Zero modifications, cleaning, or transformations made to the original DataFrame `df`.
 
 ---
@@ -1061,14 +1061,14 @@ nowc same i need in chat for eda
 
 --------------------------------------------------------------------------------
 [ASSISTANT RESPONSE / DELIVERABLE SUMMARY]
-Here is the complete, step-by-step breakdown of everything performed and discovered during the **Exploratory Data Analysis (EDA) & Baselines** phase on your Team 3 dataset from [notebook/eda.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/eda.ipynb):
+Here is the complete, step-by-step breakdown of everything performed and discovered during the **Exploratory Data Analysis (EDA) & Baselines** phase on your Team 3 dataset from [notebook/eda.ipynb](notebook/eda.ipynb):
 
 ---
 
 ### 📌 Overview & Scope
 * **Team:** 3 — **Phoenix**
 * **Clean Dataset Used:** **1,976 rows** (after applying our verified glitch filter: dropping `battery_v < 3.0V`, `temp_c < -10°C`, and `wifi_rssi_dbm >= 0`).
-* **Notebook:** [notebook/eda.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/eda.ipynb)
+* **Notebook:** [notebook/eda.ipynb](notebook/eda.ipynb)
 * **Goal:** Understand feature distributions, discover non-linear relationships, compute correlations, evaluate Mission 1 baselines, and analyze where simple linear models fail.
 
 ---
@@ -1311,7 +1311,7 @@ Before making any changes, we inspected the existing codebase:
 * **`app/main.py`:** The FastAPI server loading `model/config.json` and `model/model.pt`, requiring `mu`, `sd`, and `hidden` parameters for real-time inference.
 * **Proposed & executed changes:**
   1. Updated `train.py` to fill the Mission 1 & 2 TODOs: glitch filtering, linear regression baseline, and normalisation calculated strictly on the training set.
-  2. Documented and executed the complete Experiment 1 inside [notebook/eda.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/eda.ipynb) with full epoch tracking and diagnostic learning curve plots.
+  2. Documented and executed the complete Experiment 1 inside [notebook/eda.ipynb](notebook/eda.ipynb) with full epoch tracking and diagnostic learning curve plots.
   3. Preserved the raw dataset file `data/team_03_train.csv` untouched.
 
 ---
@@ -2006,17 +2006,17 @@ Below is the complete delivery report:
 
 | File Path | Description | Status |
 | :--- | :--- | :---: |
-| [**`README.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/README.md) | Main project entry point with all 20 required sections | **Updated** |
-| [**`docs/README.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/README.md) | Documentation index and project progress tracker | **Created** |
-| [**`docs/01_problem_definition.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/01_problem_definition.md) | Business problem, Edge AI motivation, ML framing, training vs deployment | **Created** |
-| [**`docs/02_dataset_and_data_quality.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/02_dataset_and_data_quality.md) | In-depth dataset audit, verified statistics, glitch analysis, provisional disclaimer | **Created** |
-| [**`docs/03_eda_and_baselines.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/03_eda_and_baselines.md) | Distributions, non-linear relationships, correlations, Mean & Linear baselines | **Created** |
-| [**`docs/04_model_development.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/04_model_development.md) | Neural network foundations, normalization strictly on train split, Adam optimization | **Created** |
-| [**`docs/05_experiment_1_initial_nn.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/05_experiment_1_initial_nn.md) | Full scientific report on 5 → 32 → 32 → 1 baseline, complexity, and ESP32-S3 fit | **Created** |
-| [**`docs/06_diagnostics.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/06_diagnostics.md) | 14-point residual and error diagnostic protocol | **Created (Pending)** |
-| [**`docs/07_architecture_experiments.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/07_architecture_experiments.md) | Hidden width sweep (4..64), depth trade-offs, Pareto frontier plan | **Created (Not Started)** |
-| [**`docs/08_edge_deployment.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/08_edge_deployment.md) | FastAPI serving, Pydantic 422 validation, latency profiling, on-device vs cloud | **Created (Not Started)** |
-| [**`docs/09_final_results_and_conclusion.md`**](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/09_final_results_and_conclusion.md) | Final synthesis template for project wrap-up | **Created (Not Started)** |
+| [**`README.md`**](README.md) | Main project entry point with all 20 required sections | **Updated** |
+| [**`docs/README.md`**](docs/README.md) | Documentation index and project progress tracker | **Created** |
+| [**`docs/01_problem_definition.md`**](docs/01_problem_definition.md) | Business problem, Edge AI motivation, ML framing, training vs deployment | **Created** |
+| [**`docs/02_dataset_and_data_quality.md`**](docs/02_dataset_and_data_quality.md) | In-depth dataset audit, verified statistics, glitch analysis, provisional disclaimer | **Created** |
+| [**`docs/03_eda_and_baselines.md`**](docs/03_eda_and_baselines.md) | Distributions, non-linear relationships, correlations, Mean & Linear baselines | **Created** |
+| [**`docs/04_model_development.md`**](docs/04_model_development.md) | Neural network foundations, normalization strictly on train split, Adam optimization | **Created** |
+| [**`docs/05_experiment_1_initial_nn.md`**](docs/05_experiment_1_initial_nn.md) | Full scientific report on 5 → 32 → 32 → 1 baseline, complexity, and ESP32-S3 fit | **Created** |
+| [**`docs/06_diagnostics.md`**](docs/06_diagnostics.md) | 14-point residual and error diagnostic protocol | **Created (Pending)** |
+| [**`docs/07_architecture_experiments.md`**](docs/07_architecture_experiments.md) | Hidden width sweep (4..64), depth trade-offs, Pareto frontier plan | **Created (Not Started)** |
+| [**`docs/08_edge_deployment.md`**](docs/08_edge_deployment.md) | FastAPI serving, Pydantic 422 validation, latency profiling, on-device vs cloud | **Created (Not Started)** |
+| [**`docs/09_final_results_and_conclusion.md`**](docs/09_final_results_and_conclusion.md) | Final synthesis template for project wrap-up | **Created (Not Started)** |
 
 ---
 
@@ -2788,7 +2788,7 @@ After completion, provide a concise report of what was added, the actual finding
 **Project:** Edge AI Smart Doorbell Battery-Life Prediction — Team 3 (**Phoenix**)  
 **Audit Target:** Frozen Checkpoint (`model/model.pt` & `model/config.json`)  
 **Evaluation Set:** 395 unseen validation records (`data/team_03_train.csv`, seed 0)  
-**Notebook Updated:** [notebook/eda.ipynb](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/eda.ipynb) (Appended under a dedicated section; all cells executed and pre-rendered)  
+**Notebook Updated:** [notebook/eda.ipynb](notebook/eda.ipynb) (Appended under a dedicated section; all cells executed and pre-rendered)  
 
 ---
 
@@ -3099,17 +3099,17 @@ All project documentation has been synchronized to establish a transparent, self
 
 | Action | File Path | Markdown Link | Purpose & Content |
 | :---: | :--- | :--- | :--- |
-| **Created** | `docs/experiment_log.md` | [experiment_log.md](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/experiment_log.md) | Dedicated chronological experiment register tracking `EXP-001` through `EXP-004` + planned experiments. |
-| **Expanded** | `docs/06_diagnostics.md` | [06_diagnostics.md](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/06_diagnostics.md) | Exhaustive 10-section (A–J) diagnostic audit report of the saved neural network checkpoint. |
-| **Updated** | `docs/README.md` | [docs/README.md](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/README.md) | Updated roadmap, status table, and added direct links to the new Experiment Log. |
-| **Updated** | `README.md` | [README.md](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/README.md) | Updated workflow status (Audit marked `[Completed]`), project tree, and modular docs links. |
-| **Logged** | `notebook/log.txt` | [log.txt](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/log.txt) | Team working mission log updated with exact numerical outputs and hardware audit details. |
+| **Created** | `docs/experiment_log.md` | [experiment_log.md](docs/experiment_log.md) | Dedicated chronological experiment register tracking `EXP-001` through `EXP-004` + planned experiments. |
+| **Expanded** | `docs/06_diagnostics.md` | [06_diagnostics.md](docs/06_diagnostics.md) | Exhaustive 10-section (A–J) diagnostic audit report of the saved neural network checkpoint. |
+| **Updated** | `docs/README.md` | [docs/README.md](docs/README.md) | Updated roadmap, status table, and added direct links to the new Experiment Log. |
+| **Updated** | `README.md` | [README.md](README.md) | Updated workflow status (Audit marked `[Completed]`), project tree, and modular docs links. |
+| **Logged** | `notebook/log.txt` | [log.txt](notebook/log.txt) | Team working mission log updated with exact numerical outputs and hardware audit details. |
 
 ---
 
 ## 2. Summary of How the Diagnostic Audit Was Documented
 
-The diagnostic audit is documented in [docs/06_diagnostics.md](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/06_diagnostics.md) across ten structured sections following strict scientific reporting standards:
+The diagnostic audit is documented in [docs/06_diagnostics.md](docs/06_diagnostics.md) across ten structured sections following strict scientific reporting standards:
 
 * **Section A (Objective):** Frames the audit around six core engineering questions: verification of the $4.13\text{d}$ metric in an isolated script, error distribution skewness, physical boundary violations, performance across battery lifecycle stages, worst-case failure modes, and edge microcontroller feasibility.
 * **Section B (Previous Experiment Context):** Connects the audit to Experiment 1, detailing the dataset, 24 filtered glitch rows ($1.2\%$), the 80/20 train/validation split ($1,581\text{ train} / 395\text{ val}$), and resolving the checkpoint origin (saved checkpoint is
@@ -3542,23 +3542,23 @@ Complete only this architecture sweep and its verification/documentation.
 ## A. Files Inspected
 
 Before executing any experiments, the existing project configuration and pipeline files were inspected:
-1. [`train.py`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/train.py): Inspected data ingestion, provisional glitch filter logic, split mechanism (`rng = np.random.default_rng(0)`, 80/20), training-derived $\mu$ and $\sigma$ calculation, Adam optimizer setup (`lr=3e-3`), batch size (128), MSE loss, and checkpoint saving behavior.
-2. [`app/model.py`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/app/model.py): Inspected the `BatteryNet` class definition and confirmed that `BatteryNet(hidden)` dynamically supports arbitrary tuples of hidden layer sizes (e.g. `(4,)`, `(8, 8)`).
-3. [`model/config.json`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/model/config.json): Inspected stored baseline parameters (team 3, hidden `[32, 32]`, reported val MAE $4.13\text{d}$, and reference normalization values).
-4. [`docs/04_model_development.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/04_model_development.md): Verified normalization rationale (training-set only, zero leakage).
-5. [`docs/05_experiment_1_initial_nn.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/05_experiment_1_initial_nn.md): Verified Experiment 1 reference metrics ($4.13\text{d}$ MAE, 1,281 parameters, 1,216 MACs).
-6. [`docs/06_diagnostics.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/06_diagnostics.md): Verified diagnostic findings on the reference checkpoint.
-7. [`docs/07_architecture_experiments.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/07_architecture_experiments.md): Inspected original planned sweep matrix and formulas.
-8. [`docs/experiment_log.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/experiment_log.md): Verified experiment register formatting and history.
-9. [`notebook/log.txt`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/log.txt): Verified team mission log entries.
-10. [`README.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/README.md): Inspected current roadmap and architecture references.
+1. [`train.py`](train.py): Inspected data ingestion, provisional glitch filter logic, split mechanism (`rng = np.random.default_rng(0)`, 80/20), training-derived $\mu$ and $\sigma$ calculation, Adam optimizer setup (`lr=3e-3`), batch size (128), MSE loss, and checkpoint saving behavior.
+2. [`app/model.py`](app/model.py): Inspected the `BatteryNet` class definition and confirmed that `BatteryNet(hidden)` dynamically supports arbitrary tuples of hidden layer sizes (e.g. `(4,)`, `(8, 8)`).
+3. [`model/config.json`](model/config.json): Inspected stored baseline parameters (team 3, hidden `[32, 32]`, reported val MAE $4.13\text{d}$, and reference normalization values).
+4. [`docs/04_model_development.md`](docs/04_model_development.md): Verified normalization rationale (training-set only, zero leakage).
+5. [`docs/05_experiment_1_initial_nn.md`](docs/05_experiment_1_initial_nn.md): Verified Experiment 1 reference metrics ($4.13\text{d}$ MAE, 1,281 parameters, 1,216 MACs).
+6. [`docs/06_diagnostics.md`](docs/06_diagnostics.md): Verified diagnostic findings on the reference checkpoint.
+7. [`docs/07_architecture_experiments.md`](docs/07_architecture_experiments.md): Inspected original planned sweep matrix and formulas.
+8. [`docs/experiment_log.md`](docs/experiment_log.md): Verified experiment register formatting and history.
+9. [`notebook/log.txt`](notebook/log.txt): Verified team mission log entries.
+10. [`README.md`](README.md): Inspected current roadmap and architecture references.
 
 ---
 
 ## B. Files Created
 
 To preserve the production training pipeline and ensure strict isolation:
-1. [`experiments/architecture_sweep_1.py`](file:///Users/apple/Docum
+1. [`experiments/architecture_sweep_1.py`](docs/07_architecture_experiments.md
 
 [... response continues in project documentation ...]
 
@@ -3978,26 +3978,26 @@ Do not proceed to API integration.
 ## A. Files Inspected
 
 Before implementing Phase 7.2, the following existing project files and artifacts were inspected:
-1. [`experiments/architecture_sweep_1.py`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/experiments/architecture_sweep_1.py): Inspected data ingestion, provisional cleaning, split generation (`np.random.default_rng(0)`), training normalization, and training loop mechanics.
-2. [`experiments/sweep_1_results/architecture_sweep_1_results.csv`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/experiments/sweep_1_results/architecture_sweep_1_results.csv): Extracted the seed-0 reference values for the three shortlisted models.
-3. [`experiments/sweep_1_results/sweep_1_summary.json`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/experiments/sweep_1_results/sweep_1_summary.json): Verified convergence notes and duration metadata for seed 0.
+1. [`experiments/architecture_sweep_1.py`](experiments/architecture_sweep_1.py): Inspected data ingestion, provisional cleaning, split generation (`np.random.default_rng(0)`), training normalization, and training loop mechanics.
+2. [`experiments/sweep_1_results/architecture_sweep_1_results.csv`](experiments/sweep_1_results/architecture_sweep_1_results.csv): Extracted the seed-0 reference values for the three shortlisted models.
+3. [`experiments/sweep_1_results/sweep_1_summary.json`](experiments/sweep_1_results/sweep_1_summary.json): Verified convergence notes and duration metadata for seed 0.
 4. Saved Weights from Sweep 1:
    - `experiments/sweep_1_results/weights_2-layer_8__8.pt`
    - `experiments/sweep_1_results/weights_2-layer_16__16.pt`
    - `experiments/sweep_1_results/weights_2-layer_32__32.pt`
-5. [`train.py`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/train.py): Verified identical data pipeline and hyperparameter conventions.
-6. [`app/model.py`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/app/model.py): Verified `BatteryNet` dynamic hidden layer support.
-7. [`model/config.json`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/model/config.json): Confirmed production reference configuration.
-8. [`docs/07_architecture_experiments.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/07_architecture_experiments.md): Reviewed Sweep 1 findings and the original shortlist rationale.
-9. [`docs/experiment_log.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/experiment_log.md): Verified chronological registry conventions.
-10. [`notebook/log.txt`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/log.txt): Reviewed team progress logs.
+5. [`train.py`](train.py): Verified identical data pipeline and hyperparameter conventions.
+6. [`app/model.py`](app/model.py): Verified `BatteryNet` dynamic hidden layer support.
+7. [`model/config.json`](model/config.json): Confirmed production reference configuration.
+8. [`docs/07_architecture_experiments.md`](docs/07_architecture_experiments.md): Reviewed Sweep 1 findings and the original shortlist rationale.
+9. [`docs/experiment_log.md`](docs/experiment_log.md): Verified chronological registry conventions.
+10. [`notebook/log.txt`](notebook/log.txt): Reviewed team progress logs.
 
 ---
 
 ## B. Files Created
 
 To guarantee complete isolation without altering existing experiment outputs:
-1. [`experiments/shortlist_repeatability.py`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/experiments/shortlist_repeatability.py): Standalone reproducible runner evaluating the 3 shortlisted mod
+1. [`experiments/shortlist_repeatability.py`](experiments/shortlist_repeatability.py): Standalone reproducible runner evaluating the 3 shortlisted mod
 
 [... response continues in project documentation ...]
 
@@ -5297,10 +5297,10 @@ The goal is a complete experimental documentation package that someone else can 
 
 | Created Document Path | Word / Byte Count | Primary Contents & Focus |
 | :--- | :---: | :--- |
-| [`docs/08_repeatability.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/08_repeatability.md) | 24,724 bytes | **Phase 7.2 (EXP-006): Shortlist Multi-Seed Repeatability Validation.** Comprehensive report covering all 15 runs across 3 shortlisted models (`2-Layer (8, 8)`, `2-Layer (16, 16)`, `2-Layer (32, 32)`) and 5 random training seeds ($0, 1, 2, 3, 4$). Full per-run table, aggregate sample statistics ($s, \text{ddof}=1$), worked mathematical derivations, low-battery domain analysis ($N=85$), and comprehensive reporting on Figures 5–8. |
-| [`docs/09_model_selection.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/09_model_selection.md) | 18,586 bytes | **Model Architecture Selection & Multi-Objective Engineering Decision.** In-depth comparative profiles of the 8–8, 16–16, and 32–32 topologies; complete 12-dimensional decision matrix; the formal **9-Step Selection Reasoning Chain**; and explicit justification for recommending **2-Layer (16, 16)** as our production engineering compromise. |
-| [`docs/10_mathematical_methodology.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/10_mathematical_methodology.md) | 18,844 bytes | **Mathematical & Computational Formulations.** Exhaustive definitions and theoretical derivations for MAE, MSE, RMSE, MedAE, signed error/bias, sample standard deviation with Bessel's correction ($ddof=1$), layer-by-layer parameter equations for all 10 architectures, exact MAC formulations ($\sum n_{\text{in}} \times n_{\text{out}}$), FP32 and theoretical INT8 memory footprints, and percentage reduction equations with worked examples. |
-| [`docs/11_assumptions_and_reproducibility.md`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/docs/11_assumptions_and_reproducibility.md) | 16,456 bytes | **Assumptions, Scientific Limitations, Scope Boundaries & Reproducibility Checklist.** Contains the authoritative 16-point assumptions and methodology matrix, epistemological claim classification (measured vs. calculated vs
+| [`docs/08_repeatability.md`](docs/08_repeatability.md) | 24,724 bytes | **Phase 7.2 (EXP-006): Shortlist Multi-Seed Repeatability Validation.** Comprehensive report covering all 15 runs across 3 shortlisted models (`2-Layer (8, 8)`, `2-Layer (16, 16)`, `2-Layer (32, 32)`) and 5 random training seeds ($0, 1, 2, 3, 4$). Full per-run table, aggregate sample statistics ($s, \text{ddof}=1$), worked mathematical derivations, low-battery domain analysis ($N=85$), and comprehensive reporting on Figures 5–8. |
+| [`docs/09_model_selection.md`](docs/09_model_selection.md) | 18,586 bytes | **Model Architecture Selection & Multi-Objective Engineering Decision.** In-depth comparative profiles of the 8–8, 16–16, and 32–32 topologies; complete 12-dimensional decision matrix; the formal **9-Step Selection Reasoning Chain**; and explicit justification for recommending **2-Layer (16, 16)** as our production engineering compromise. |
+| [`docs/10_mathematical_methodology.md`](docs/10_mathematical_methodology.md) | 18,844 bytes | **Mathematical & Computational Formulations.** Exhaustive definitions and theoretical derivations for MAE, MSE, RMSE, MedAE, signed error/bias, sample standard deviation with Bessel's correction ($ddof=1$), layer-by-layer parameter equations for all 10 architectures, exact MAC formulations ($\sum n_{\text{in}} \times n_{\text{out}}$), FP32 and theoretical INT8 memory footprints, and percentage reduction equations with worked examples. |
+| [`docs/11_assumptions_and_reproducibility.md`](docs/11_assumptions_and_reproducibility.md) | 16,456 bytes | **Assumptions, Scientific Limitations, Scope Boundaries & Reproducibility Checklist.** Contains the authoritative 16-point assumptions and methodology matrix, epistemological claim classification (measured vs. calculated vs
 
 [... response continues in project documentation ...]
 
@@ -5321,13 +5321,13 @@ also can u update log txt file with all our chat history so that the person can 
 
 --------------------------------------------------------------------------------
 [ASSISTANT RESPONSE / DELIVERABLE SUMMARY]
-I have updated [`notebook/log.txt`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/log.txt) with the complete, chronological project trajectory, conversational history, and experimental records.
+I have updated [`notebook/log.txt`](notebook/log.txt) with the complete, chronological project trajectory, conversational history, and experimental records.
 
 Anyone opening `notebook/log.txt` will now see a chronological record of everything accomplished across all sessions:
 
 ---
 
-### What Was Added to [`notebook/log.txt`](file:///Users/apple/Documents/5th%20sem%20el/EDGE_AI/edge_ai_assignment1/notebook/log.txt):
+### What Was Added to [`notebook/log.txt`](notebook/log.txt):
 
 1. **Header & Team Identity:**
    * Team 3 (Phoenix: Pavan R, Shreyank D K, Adarsh K R, Ankitha A).

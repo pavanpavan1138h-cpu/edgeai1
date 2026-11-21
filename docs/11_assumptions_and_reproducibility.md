@@ -73,7 +73,7 @@ To maintain unwavering scientific credibility, every statement within our projec
    * Seed 4 of the 8–8 architecture exhibited an error spike to $7.99\text{ days}$.
 5. **Hypotheses (Plausible Mechanisms):**
    * *Hypothesis:* The flat lithium discharge plateau causes heteroscedastic error because distinct lifespans share identical cell voltages.
-   * *Hypothesis:* The 8–8 failure on Seed 4 resulted from adverse weight initialization causing dead ReLU neurons in an under-capacitated network.
+   * *Hypothesis:* Seed 4 of the 8–8 architecture exhibited substantially poorer performance ($7.99\text{d}$), which may indicate sensitivity to initialization or optimization in the smaller architecture. Dead ReLU neurons are one possible explanation, but this was not directly verified.
 6. **Limitations (Boundaries of Validity):**
    * The models have not been tested under sub-zero thermal extremes or non-stationary network conditions.
    * Five seeds provide initial evidence of stability, not formal statistical significance.

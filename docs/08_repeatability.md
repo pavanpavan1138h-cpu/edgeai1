@@ -145,10 +145,10 @@ The five-seed trajectories for the low-battery segment reveal a remarkable findi
 | **2-Layer (16, 16)** | 1.5950 d | 0.9460 d | 1.0674 d | 1.1637 d | 1.3346 d | **1.2213 d** ($\pm 0.2526\text{ d}$) |
 | **2-Layer (32, 32)** | 1.1931 d | 1.0423 d | 1.0982 d | 1.5424 d | 1.5072 d | **1.2766 d** ($\pm 0.2332\text{ d}$) |
 
-### 4.3 Key Finding: 16–16 Outperforms 32–32 in Critical Low-Battery Domain
+### 4.3 Key Finding: 16–16 Performance in Low-Battery / Near-Depletion Evaluation Subset
 Across the five seeds, the compact **2-Layer (16, 16)** architecture achieved a mean low-battery error of **$1.2213\text{ days}$** ($29.3\text{ hours}$), which is slightly lower than the **$1.2766\text{ days}$** ($30.6\text{ hours}$) achieved by the larger 32–32 network.
-* **Why this occurs:** In highly constrained regression models with fewer parameters, the gradient updates driven by the MSE loss force the network to fit high-density, high-curvature regions tightly. In the low-voltage regime ($V < 3.5\text{V}$), the voltage discharge curve steepens sharply. The 16–16 model possesses sufficient capacity to model this knee without the excess degree-of-freedom variance that causes slight drift in wider networks.
-* **Operational Implication:** The 16–16 model does not sacrifice critical safety accuracy despite reducing parameters by $69.95\%$.
+* **Empirical Pattern:** In the low-voltage regime ($V < 3.5\text{V}$), the voltage discharge curve steepens sharply. The 16–16 model achieves low average error in this near-depletion operating regime without sacrificing overall accuracy.
+* **Operational Implication:** The 16–16 model maintains strong accuracy in the near-depletion operating window despite reducing parameters by $69.95\%$.
 
 ---
 
@@ -158,7 +158,7 @@ Across the five seeds, the compact **2-Layer (16, 16)** architecture achieved a 
 * **Mean Validation MAE:** $4.2575\text{ days}$
 * **Standard Deviation:** $\pm 0.1556\text{ days}$ ($3.65\%$ of mean)
 * **Range:** $0.3885\text{ days}$ ($9.3\text{ hours}$)
-* **Assessment:** The 32–32 network is exceptionally stable across initializations. Its parameter budget ($1,281$) provides ample overparameterization, ensuring that gradient descent easily avoids suboptimal local minima regardless of weight initialization. It remains the gold standard for pure aggregate predictive accuracy.
+* **Assessment:** The 32–32 architecture exhibited the lowest mean validation MAE ($4.2575\text{ days}$) and lowest observed variability ($\pm 0.1556\text{ days}$) across the five tested seeds. The experiment does not establish the underlying optimization mechanism responsible for this stability, though its larger parameter count ($1,281$) provides empirical consistency across the evaluated seeds. It serves as our benchmark reference for pure predictive accuracy.
 
 ### 5.2 2-Layer (16, 16): Excellent Stability, Optimal Trade-Off
 * **Mean Validation MAE:** $4.4549\text{ days}$
@@ -171,7 +171,7 @@ Across the five seeds, the compact **2-Layer (16, 16)** architecture achieved a 
 * **Standard Deviation:** $\pm 1.3166\text{ days}$ ($23.28\%$ of mean)
 * **Range:** $3.0858\text{ days}$ ($74.1\text{ hours}$)
 * **Assessment:** While Seeds 0 through 3 converged reasonably well ($4.91\text{d}$ to $5.32\text{d}$, mean $\approx 5.07\text{d}$), **Seed 4 encountered an optimization plateau**, terminating at $7.9941\text{d}$ validation MAE (train MAE $7.4154\text{d}$, MSE $122.83$).
-* **Mechanism:** With only 8 neurons per layer ($129$ total parameters), the loss landscape contains narrow ravines and Saddle points. If unfavorable random weight initialization places neurons in saturated or dead ReLU zones, the network struggles to recover without learning-rate restarts. This vulnerability makes the 8–8 architecture risky as a primary production model.
+* **Sensitivity Analysis:** Seed 4 exhibited substantially poorer performance than the other runs ($7.9941\text{d}$ vs. an average of $5.07\text{d}$ on Seeds 0–3). This may indicate sensitivity to initialization or optimization in the smaller architecture. Dead ReLU neurons are one possible explanation, but this was not directly verified. This observed variability makes the 8–8 architecture better suited as an ultra-compact fallback rather than a primary production model.
 
 ---
 
@@ -262,6 +262,6 @@ Below is the complete audit of all graphical artifacts generated during EXP-006,
 
 1. **Robustness of 16–16:** The **2-Layer (16, 16)** architecture is proven to be stable and repeatable, maintaining an average validation MAE of **$4.4549\text{ days}$** with a tight standard deviation of **$\pm 0.2005\text{ days}$**.
 2. **Negligible Accuracy Trade-off:** The performance penalty of choosing 16–16 over the overparameterized 32–32 baseline is only **$0.1974\text{ days}$ ($4.74\text{ hours}$)** on average.
-3. **Low-Battery Excellence:** In the safety-critical operating window ($0 \le y \le 10\text{ days}$), the 16–16 architecture achieves a superior mean MAE of **$1.2213\text{ days}$** ($29.3\text{ hours}$), confirming its readiness for smart home alert systems.
+3. **Low-Battery Accuracy:** In the low-battery / near-depletion evaluation subset ($0 \le y \le 10\text{ days}$, $N=85$), the 16–16 architecture achieves a mean MAE of **$1.2213\text{ days}$** ($29.3\text{ hours}$), slightly lower than the 32–32 benchmark ($1.2766\text{ days}$).
 4. **Instability of 8–8:** The ultra-compact 8–8 model ($129$ params) exhibits significant initialization fragility ($\text{std} = \pm 1.3166\text{ d}$, with Seed 4 failing at $7.99\text{ d}$), relegating it to a lightweight fallback role rather than a primary deployment recommendation.
 

@@ -49,10 +49,10 @@ From the initial pool of ten architectures evaluated in EXP-005, three candidate
   * Sample Standard Deviation ($s, \text{ddof}=1$): **$\pm 0.2005\text{ days}$** ($4.50\%$ relative dispersion)
   * Minimum / Maximum: $4.2742\text{ days}$ (Seed 1) to $4.7758\text{ days}$ (Seed 0)
   * Range ($\Delta$): $0.5016\text{ days}$ ($12.0\text{ hours}$)
-* **Low-Battery Safety Regime ($y \le 10\text{ days}$, $N=85$):**
+* **Low-Battery / Near-Depletion Evaluation Subset ($y \le 10\text{ days}$, $N=85$):**
   * Mean Low-Battery MAE: **$1.2213\text{ days}$** ($29.3\text{ hours}$)
   * Sample Standard Deviation: **$\pm 0.2526\text{ days}$**
-  * *Note: Outperforms the larger 32–32 model in this safety-critical domain.*
+  * *Note: Slightly outperforms the larger 32–32 model in this near-depletion operating window ($1.22\text{d}$ vs. $1.28\text{d}$).*
 * **Complexity Reductions Relative to 32–32 Reference:**
   * Parameter Reduction: $\frac{1281 - 385}{1281} \times 100 = \mathbf{69.95\%}$ fewer parameters.
   * MAC Reduction: $\frac{1216 - 352}{1216} \times 100 = \mathbf{71.05\%}$ fewer operations.
@@ -62,8 +62,8 @@ From the initial pool of ten architectures evaluated in EXP-005, three candidate
 * **Advantages:**
   * Exceptional hardware efficiency: Reduces computational load and parameter memory by more than two-thirds.
   * Negligible accuracy penalty: An average difference of less than 5 hours over a multi-month battery lifespan is imperceptible to end consumers.
-  * Superior safety accuracy: Achieves the lowest error in the critical depletion window ($1.22\text{ days}$).
-  * Optimization robustness: Low variance across random seeds ($\pm 0.20\text{ d}$), ensuring consistent training outcomes.
+  * Near-depletion precision: Achieves the lowest mean error in the $0 - 10\text{ day}$ evaluation window ($1.22\text{ days}$).
+  * Optimization consistency: Low variance across random seeds ($\pm 0.20\text{ d}$), ensuring consistent training outcomes.
 * **Disadvantages:**
   * Marginally higher aggregate validation MAE ($+0.1974\text{ d}$) than the larger 32–32 network.
 * **Engineering Recommendation:** **Primary Deployment Recommendation.**
@@ -80,12 +80,12 @@ From the initial pool of ten architectures evaluated in EXP-005, three candidate
   * Sample Standard Deviation ($s, \text{ddof}=1$): **$\pm 0.1556\text{ days}$** ($3.65\%$ relative dispersion)
   * Minimum / Maximum: $4.1010\text{ days}$ (Seed 1) to $4.4895\text{ days}$ (Seed 3)
   * Range ($\Delta$): $0.3885\text{ days}$ ($9.3\text{ hours}$)
-* **Low-Battery Safety Regime ($y \le 10\text{ days}$, $N=85$):**
+* **Low-Battery / Near-Depletion Evaluation Subset ($y \le 10\text{ days}$, $N=85$):**
   * Mean Low-Battery MAE: **$1.2766\text{ days}$** ($30.6\text{ hours}$)
   * Sample Standard Deviation: **$\pm 0.2332\text{ days}$**
 * **Advantages:**
   * Highest overall predictive accuracy among all evaluated stable topologies.
-  * Exceptionally smooth loss landscape: The larger parameter budget provides redundancy, minimizing sensitivity to weight initialization.
+  * The 32–32 architecture exhibited the lowest mean validation MAE ($4.2575\text{ days}$) and lowest observed variability ($\pm 0.1556\text{ days}$) across the five tested seeds. The experiment does not establish the underlying optimization mechanism responsible for this stability, though its larger parameter count ($1,281$) provides empirical consistency across the evaluated seeds.
   * Serves as the active production weights in `model/model.pt` evaluated in EXP-001 and EXP-004.
 * **Disadvantages:**
   * High computational overhead: Requires $3.45\times$ more MACs and $3.33\times$ more parameters than 16–16 for a diminishing gain of only $4.74\text{ hours}$ in aggregate MAE.
@@ -104,7 +104,7 @@ From the initial pool of ten architectures evaluated in EXP-005, three candidate
   * Sample Standard Deviation ($s, \text{ddof}=1$): **$\pm 1.3166\text{ days}$** ($23.28\%$ relative dispersion)
   * Minimum / Maximum: $4.9083\text{ days}$ (Seed 3) to $7.9941\text{ days}$ (Seed 4)
   * Range ($\Delta$): $3.0858\text{ days}$ ($74.1\text{ hours}$)
-* **Low-Battery Safety Regime ($y \le 10\text{ days}$, $N=85$):**
+* **Low-Battery / Near-Depletion Evaluation Subset ($y \le 10\text{ days}$, $N=85$):**
   * Mean Low-Battery MAE: **$1.8028\text{ days}$** ($43.3\text{ hours}$)
   * Sample Standard Deviation: **$\pm 0.5089\text{ days}$**
 * **Complexity Reductions Relative to 32–32 Reference:**
@@ -114,7 +114,7 @@ From the initial pool of ten architectures evaluated in EXP-005, three candidate
   * Ultra-compact footprint: Raw weights fit in barely $516\text{ bytes}$ of memory, enabling deployment on extremely constrained microcontrollers (e.g., 8-bit or 16-bit MCUs with $<2\text{ KB}$ SRAM).
   * Fast execution: Requires barely $112\text{ MACs}$, completing inference in under a few microseconds.
 * **Disadvantages:**
-  * Optimization fragility: Highly susceptible to adverse weight initializations. On Seed 4, the model stalled in a poor local minimum with a validation MAE of $7.9941\text{ days}$ ($122.83\text{ MSE}$).
+  * Optimization sensitivity: Seed 4 exhibited substantially poorer performance than the other runs ($7.9941\text{d}$ vs. an average of $5.07\text{d}$ on Seeds 0–3). This may indicate sensitivity to initialization or optimization in the smaller architecture. Dead ReLU neurons are one possible explanation, but this was not directly verified.
   * Noticeable accuracy penalty: Even on successful runs, validation MAE hovers around $5.0\text{ days}$ ($12$ hours worse than 16–16).
 * **Engineering Recommendation:** **Lightweight Alternative.** Suitable only for severely constrained hardware architectures where available RAM is under $1\text{ KB}$ and occasional retraining or checkpoint selection can discard failed runs.
 
@@ -156,7 +156,7 @@ To ensure another engineer or academic evaluator can follow the exact thought pr
 │   Step 5: Test Multi-Seed Repeatability & Optimization Stability       │
 │   Step 6: Penalize Small-Model Initialization Fragility (8-8)          │
 │   Step 7: Quantify the Edge AI Diminishing-Returns Threshold           │
-│   Step 8: Validate Safety-Critical Domain Accuracy (Low-Battery Knee)   │
+│   Step 8: Validate Near-Depletion Evaluation Subset Accuracy (0–10d)   │
 │   Step 9: Formulate the Tri-Tier Production Recommendation             │
 └────────────────────────────────────────────────────────────────────────┘
 ```
@@ -179,13 +179,13 @@ All other candidate networks were strictly dominated in both accuracy and comple
 Benchmarking the shortlisted candidates across five seeds ($\text{seed} \in \{0, 1, 2, 3, 4\}$) proved that performance was not an artifact of random chance. The observed rankings remained broadly consistent across seeds.
 
 ### Step 6: Penalize Small-Model Initialization Fragility (8–8)
-While the 8–8 model achieved acceptable accuracy on four seeds ($\approx 5.0\text{d}$), it suffered an optimization failure on Seed 4 ($7.99\text{d}$ MAE, $\text{MSE}=122.83$). With only 8 neurons per layer, bad weight initializations easily trap the network in dead-ReLU configurations. This high variance ($\pm 1.32\text{d}$) disqualifies 8–8 from serving as the primary production model.
+While the 8–8 model achieved acceptable accuracy on four seeds ($\approx 5.0\text{d}$), Seed 4 exhibited substantially poorer performance than the other runs ($7.9941\text{d}$ MAE, $\text{MSE}=122.83$). This may indicate sensitivity to initialization or optimization in the smaller architecture. Dead ReLU neurons are one possible explanation, but this was not directly verified. This high observed variance ($\pm 1.32\text{d}$) makes 8–8 better suited as a lightweight fallback rather than a primary production model.
 
 ### Step 7: Quantify the Edge AI Diminishing-Returns Threshold
 Moving from 8–8 to 16–16 (+256 params) slashes validation MAE by $1.20\text{ days}$ ($21.2\%$). However, moving from 16–16 to 32–32 (+896 params) yields a marginal gain of only $0.1974\text{ days}$ ($4.74\text{ hours}$, or $4.4\%$). In an edge environment, spending $3.33\times$ more memory and $3.45\times$ more energy for a $4.7$-hour difference over a 6-month lifespan violates fundamental edge engineering principles.
 
-### Step 8: Validate Safety-Critical Domain Accuracy (Low-Battery Knee)
-In the critical operating regime ($y \le 10\text{ days}$), the 16–16 model achieved an outstanding average error of **$1.2213\text{ days}$**, actually surpassing the 32–32 model ($1.2766\text{ days}$). Its constrained capacity acts as an inductive regularizer, preventing overparameterized drift in high-curvature voltage regions.
+### Step 8: Validate Near-Depletion Evaluation Subset Accuracy (Low-Battery Knee)
+In the near-depletion operating regime ($y \le 10\text{ days}$, $N=85$), the 16–16 model achieved an average error of **$1.2213\text{ days}$**, slightly lower than the 32–32 model ($1.2766\text{ days}$).\text{ days}$). Its constrained capacity acts as an inductive regularizer, preventing overparameterized drift in high-curvature voltage regions.
 
 ### Step 9: Formulate the Tri-Tier Production Recommendation
 Rather than declaring a single "winner," we formulate a comprehensive, tri-tier engineering architecture:

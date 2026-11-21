@@ -16,7 +16,7 @@ Specifically, the audit answers the following critical engineering questions:
 1. **Discrepancy and Checkpoint Verification:** Does the exported checkpoint (`model/model.pt`) genuinely reproduce the reported $4.13\text{ days}$ validation MAE when loaded in an isolated environment?
 2. **Error Distribution & Skew:** Is the error normally distributed around zero, or is the mean error skewed by extreme outliers? What is the median operational error experienced by typical users?
 3. **Physical Feasibility & Boundary Behavior:** Does the model ever predict unphysical values, such as negative remaining operational days ($\hat{y} < 0$) or lifespans far exceeding the maximum known battery capacity?
-4. **Operating Regime Dissection:** How does the model perform in safety-critical conditions (e.g., when the battery has less than $10\text{ days}$ remaining) compared to fresh cells ($> 120\text{ days}$ remaining)?
+4. **Operating Regime Dissection:** How does the model perform in the low-battery / near-depletion evaluation subset (actual days_left $\le 10\text{ days}$) compared to fresh cells ($> 120\text{ days}$ remaining)?
 5. **Worst-Case Failure Modes:** What are the specific feature profiles of the worst predictions? Are they caused by sensor edge-cases, anomalous feature combinations, or intrinsic model limitations?
 6. **API & Edge Deployment Readiness:** Is the model ready for reliable API inference serving, and what are its theoretical edge resource requirements?
 
@@ -289,7 +289,7 @@ To understand model reliability across different stages of the battery lifecycle
 | **OVERALL VALIDATION SET** | **395** | **$100.0\%$** | **$4.128\text{ d}$** | **$2.420\text{ d}$** | **$6.020\text{ d}$** | **$-1.217\text{ d}$** |
 
 #### Key Slicing Findings:
-* **Pinpoint Accuracy When It Counts:** In the safety-critical $0 - 10\text{ day}$ window, the model achieves an astounding **$\text{MAE} = 1.19\text{ days}$** and **$\text{Median AE} = 1.04\text{ days}$**. The edge device will alert homeowners with remarkable precision right before the device dies.
+* **Low-Battery Performance ($0 - 10\text{ day}$ subset):** In the low-battery / near-depletion evaluation subset ($0 - 10\text{ days}$, $N=85$), the model achieves an average error of **$\text{MAE} = 1.19\text{ days}$** and **$\text{Median AE} = 1.04\text{ days}$**. The model demonstrates relatively low average error when battery exhaustion is near.
 * **Error Scaling (Heteroscedasticity):** Absolute error scales monotonically with remaining life:
   $$1.19\text{d} \longrightarrow 2.23\text{d} \longrightarrow 2.96\text{d} \longrightarrow 4.98\text{d} \longrightarrow 8.72\text{d}$$
   When a battery has 6 months of life remaining, the model has an uncertainty envelope of $\pm 8.7\text{ days}$, representing a relative error of only $\sim 5\%$.
@@ -369,11 +369,11 @@ The diagnostic audit generated four comprehensive analytical plots directly embe
 * **Axes:** X-axis represents Actual Lifespan ($y$) in physical days ($0$ to $320\text{ days}$). Y-axis represents Absolute Error magnitude ($|e_i| = |y_i - \hat{y}_i|$) in days ($0$ to $30\text{ days}$).
 * **Plotted Values & Calculation:** Pointwise absolute difference between target and prediction. Annotated with shaded green region highlighting the $0 - 10\text{ day}$ low-battery window.
 * **Experimental Data Used:** 395 validation samples.
-* **Observed Pattern:** Displays a distinct wedge/funnel profile: near $y = 0$, absolute errors form an ultra-dense band strictly bounded below $2\text{ days}$. The upper boundary of the error envelope expands gradually from $2\text{ days}$ at $y=10\text{d}$ to $26\text{ days}$ at $y=150\text{d}$.
-* **Interpretation:** Confirms that the neural network delivers maximum precision precisely in the safety-critical alert window where doorbell shutdown is imminent.
+* **Observed Pattern:** Displays a distinct wedge/funnel profile: the low-battery subset ($y \le 10\text{ days}$) exhibits relatively low average absolute error ($1.19\text{ days}$). MAE does not establish a bound on individual prediction errors (individual absolute errors in this subset reach up to $4.09\text{ days}$). The upper boundary of the error envelope expands gradually with lifespan, reaching $26.33\text{ days}$ around $y=138\text{d}$.
+* **Interpretation:** The model exhibits lower average absolute error near battery exhaustion than in the high-lifespan regime.
 * **Limitations:** Bivariate view does not visualize interaction effects with ambient temperature or Wi-Fi RSSI.
 * **Formal Caption:**
-  > *Figure 11: Absolute prediction error magnitude (|e|) versus actual lifespan. The shaded green region highlights the 0–10 day safety zone, where errors remain confined to a compact band averaging 1.19 days, proving high operational reliability prior to shutdown.*
+  > *Figure 11: Absolute prediction error magnitude (|e|) versus actual lifespan. The shaded green region highlights the 0–10 day near-depletion evaluation subset, where the model achieves an average absolute error of 1.19 days, though individual errors within this subset reach up to 4.09 days.*
 
 ---
 
@@ -383,11 +383,11 @@ The diagnostic audit generated four comprehensive analytical plots directly embe
 * **Axes:** Left panel: Residual value in days ($-30$ to $+30\text{ days}$) vs. Density. Right panel: Absolute error in days ($0$ to $30\text{ days}$) vs. Frequency count.
 * **Plotted Values & Calculation:** Left panel plots empirical histogram and Gaussian Kernel Density Estimation (KDE) of signed residuals. Right panel plots absolute error histogram with dashed vertical lines for Median ($2.42\text{d}$) and Mean ($4.13\text{d}$).
 * **Experimental Data Used:** 395 validation records.
-* **Observed Pattern:** The signed residual distribution is bell-shaped and approximately normal, centered at $-1.22\text{ days}$. The absolute error distribution exhibits extreme right-skewness: $75\%$ of all validation records have an error below $4.8\text{ days}$, with the median ($2.42\text{d}$) sitting at nearly half the mean ($4.13\text{d}$).
-* **Interpretation:** Proves that the headline MAE of $4.13\text{ days}$ is inflated by a small handful of high-lifespan outliers. Typical user experience is closer to $2.4\text{ days}$ error.
+* **Observed Pattern:** The residual histogram visually exhibits a pattern that may resemble a bell-shaped distribution centered near $-1.22\text{ days}$. No formal normality test was conducted. The absolute error distribution exhibits right-skewness: $75\%$ of all validation records have an error below $4.8\text{ days}$, with the median ($2.42\text{d}$) sitting at nearly half the mean ($4.13\text{d}$).
+* **Interpretation:** Demonstrates that the mean MAE of $4.13\text{ days}$ is influenced by higher-lifespan errors, while the median error across typical validation records is $2.42\text{ days}$.
 * **Limitations:** Visual bin count selection (30 bins) can subtly affect histogram peak height, though smoothed KDE confirms distribution shape.
 * **Formal Caption:**
-  > *Figure 12: Dual-panel error distribution analysis. The left panel shows approximately normal signed residuals with a mild negative bias (-1.22 days). The right panel shows strong positive skew in absolute errors, demonstrating that the median error experienced by typical devices (2.42 days) is substantially lower than the mean MAE (4.13 days).*
+  > *Figure 12: Dual-panel error distribution analysis. The left panel visually exhibits a distribution resembling a bell shape centered near -1.22 days (no formal normality test conducted). The right panel illustrates positive skew in absolute errors, showing that the median error (2.42 days) is lower than the mean MAE (4.13 days).*
 
 ---
 
@@ -444,7 +444,7 @@ Based on the verified findings of this diagnostic audit, Team 3 adopts the follo
 | ID | Decision / Recommendation | Rationale | Planned Action |
 | :---: | :--- | :--- | :--- |
 | **DEC-01** | **Maintain Frozen Checkpoint for Mission 2** | Preserves strict reproducibility across all existing team documentation and benchmarks. | Do not retrain or alter `model/model.pt` for current baseline records. |
-| **DEC-02** | **Mandate Output Clamping in Serving** | Prevents unphysical negative days from being returned to API clients. | Verified that `app/main.py` enforces `np.maximum(prediction, 0.0)`. |
+| **DEC-02** | **Verify Serving-Layer Output Clamping** | Prevents unphysical negative days from being returned to API clients. | Verified in teammate-owned serving code (`app/main.py` line 84) that non-negative clipping `np.maximum(y, 0)` is applied prior to response serialization. |
 | **DEC-03** | **Implement EarlyStopping & Best Checkpoint Saving** | Ensures future training runs automatically capture the lowest validation loss rather than the final epoch. | Add `ModelCheckpoint` logic in Phase 7 training scripts. |
 | **DEC-04** | **Explore Output Constraining Functions** | Architectural prevention of negative predictions at the model level. | Test ReLU or shifted Softplus output activations in Phase 7 experiments. |
 | **DEC-05** | **Architecture Sweeps (Phase 7)** | Determine if smaller networks ($5 \rightarrow 16 \rightarrow 16 \rightarrow 1$ or $5 \rightarrow 16 \rightarrow 8 \rightarrow 1$) match this accuracy with even lower memory and MAC footprint. | Execute systematic width and depth sweeps as outlined in `docs/07_architecture_experiments.md`. |
