@@ -88,7 +88,7 @@ The documentation is organized into 11 dedicated, cross-referenced technical rep
   * API Microservice Server: [`app/main.py`](../app/main.py)
   * Client Benchmark Tool: [`client/bench.py`](../client/bench.py)
 * **Model Checkpoints & Artifacts:**
-  * Production Checkpoint (32-32): [`model/model.pt`](../model/model.pt)
+  * Production Checkpoint (16-16, seed 1): [`model/model.pt`](../model/model.pt)
   * Production Configuration: [`model/config.json`](../model/config.json)
   * Sweep 1 Artifacts: [`experiments/sweep_1_results/`](../experiments/sweep_1_results/)
   * Repeatability Artifacts: [`experiments/shortlist_repeatability/`](../experiments/shortlist_repeatability/)

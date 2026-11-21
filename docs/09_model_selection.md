@@ -209,7 +209,7 @@ Rather than declaring a single "winner," we formulate a comprehensive, tri-tier 
 ## 5. Deployment Alignment with Project Scope
 
 To preserve full alignment with our collaborative project responsibilities:
-1. **Current Production State (`model/model.pt`):** The repository's saved model checkpoint remains the **2-Layer (32, 32)** network trained in EXP-001 ($4.13\text{ days}$ validation MAE). This checkpoint is actively loaded by our teammate's FastAPI service (`app/main.py`) and verified by the benchmark client (`client/bench.py`).
-2. **Zero Breaking Changes:** In accordance with strict change control, `model/model.pt` and `model/config.json` have not been overwritten.
-3. **Seamless Migration Path:** When our teammate is ready to transition the API microservice to the recommended **16–16** model, the trained checkpoint `experiments/shortlist_repeatability/weights_2-layer_16__16_seed1.pt` (Validation $\text{MAE} = 4.27\text{ days}$) can be promoted to `model/model.pt` alongside an updated `model/config.json` with zero changes required in client code.
+1. **Current Production State (`model/model.pt`):** The active API serves the recommended **2-Layer (16, 16), seed 1** checkpoint from `experiments/shortlist_repeatability/weights_2-layer_16__16_seed1.pt`. Its seed-specific validation MAE is **4.27 days**; the five-seed mean is **4.4549 ± 0.2005 days**.
+2. **Accuracy Reference:** The **2-Layer (32, 32)** model remains an experimental accuracy reference, not the active served checkpoint.
+3. **Consistent Serving Configuration:** `model/config.json` records the active 16–16 topology, training-derived normalization statistics, feature order, team, and matching 4.27-day checkpoint validation MAE. No client changes are needed because the API constructs the model architecture from this configuration.
 

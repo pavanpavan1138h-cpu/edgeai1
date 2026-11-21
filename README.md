@@ -4,7 +4,7 @@
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.15-ee4c2c.svg)](https://pytorch.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.165-009688.svg)](https://fastapi.tiangolo.com/)
 [![Team](https://img.shields.io/badge/Team-3%20(Phoenix)-orange.svg)](TEAMS.csv)
-[![Validation%20MAE](https://img.shields.io/badge/Validation%20MAE-4.13%20days-success.svg)](model/config.json)
+[![Validation%20MAE](https://img.shields.io/badge/Validation%20MAE-4.27%20days-success.svg)](model/config.json)
 
 ---
 
@@ -154,12 +154,14 @@ The table below synthesizes the experimental progression across classical baseli
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Baseline 1** | Predict Mean | 0 | 0 | $47.58\text{ days}$ | Deterministic | $49.32\text{ days}$ | Rejected (Floor) |
 | **Baseline 2** | Linear Regression (OLS) | 6 | 5 | $20.54\text{ days}$ | Deterministic | $14.21\text{ days}$ | Rejected (Cannot fit knee) |
-| **Experiment 1 (Ref)** | $5 \rightarrow 32 \rightarrow 32 \rightarrow 1$ (Seed 0) | 1,281 | 1,216 | **$4.13\text{ days}$** | Single run | $1.19\text{ days}$ | Verified baseline; active in `model/model.pt` |
+| **Experiment 1 (Historical Ref)** | $5 \rightarrow 32 \rightarrow 32 \rightarrow 1$ (Seed 0) | 1,281 | 1,216 | **$4.13\text{ days}$** | Single run | $1.19\text{ days}$ | Historical accuracy reference |
 | **Sweep 1: 1L-4** | $5 \rightarrow 4 \rightarrow 1$ | 29 | 24 | $10.53\text{ days}$ | Single run | $3.45\text{ days}$ | Pareto frontier; micro-baseline |
 | **Sweep 1: 2L-4-4** | $5 \rightarrow 4 \rightarrow 4 \rightarrow 1$ | 49 | 40 | $8.08\text{ days}$ | Single run | $2.89\text{ days}$ | Pareto frontier; sub-50 parameter |
 | **Repeatability: 8–8** | $5 \rightarrow 8 \rightarrow 8 \rightarrow 1$ (5 Seeds) | 129 | 112 | $5.66\text{ days}$ | $\pm 1.32\text{ days}$ | $1.80\text{ days}$ | Lightweight fallback (Seed 4 sensitivity) |
 | **Repeatability: 16–16**| **$5 \rightarrow 16 \rightarrow 16 \rightarrow 1$ (5 Seeds)**| **385** | **352** | **$4.45\text{ days}$** | **$\pm 0.20\text{ days}$** | **$1.22\text{ days}$ (Best)** | **🏆 Recommended Engineering Compromise** |
 | **Repeatability: 32–32**| **$5 \rightarrow 32 \rightarrow 32 \rightarrow 1$ (5 Seeds)**| **1,281** | **1,216** | **$4.26\text{ days}$** | **$\pm 0.16\text{ days}$** | **$1.28\text{ days}$** | **Accuracy Reference Benchmark** |
+
+**Active API checkpoint:** the recommended **2-Layer (16, 16), seed 1** model is served from `model/model.pt`. Its seed-specific validation MAE is **4.27 days**; the five-seed mean is **4.45 ± 0.20 days**. It has **385 parameters** and **352 MACs**.
 
 *The recommended **2-Layer (16, 16)** model saves **$69.95\%$ of parameters** and **$71.05\%$ of MACs** compared to the 32–32 reference, for an average trade-off of only **$0.1974\text{ days}$ ($4.74\text{ hours}$)** in validation MAE, while achieving superior precision in the critical $0 - 10\text{ day}$ near-depletion operating regime.*
 
@@ -199,7 +201,8 @@ The table below synthesizes the experimental progression across classical baseli
 - [x] **Assumptions & Reproducibility Matrix Published:** 16-point assumptions matrix, team scope boundaries, and verified command execution protocol ([docs/11_assumptions_and_reproducibility.md](docs/11_assumptions_and_reproducibility.md)).
 
 ### Teammate Upcoming Tasks:
-- [ ] **API Serving & Profiling:** Profile FastAPI request stages (`parse`, `normalise`, `inference`, `build`) and execute `client/bench.py` latency benchmarks ([docs/teammate_edge_deployment.md](docs/teammate_edge_deployment.md)).
+- [x] **API Serving Implementation:** Pydantic validation, dynamic `/model_info`, stage timings, and single/batch prediction endpoints are implemented ([app/main.py](app/main.py)).
+- [x] **API Profiling:** Executed `client/bench.py` with 200 requests against the active 16–16 checkpoint ([benchmark_results_16x16_selected_model.csv](benchmark_results_16x16_selected_model.csv)).
 
 ---
 
@@ -211,6 +214,7 @@ edge_ai_assignment1/
 ├── TEAMS.csv                      # Official team roster
 ├── requirements.txt               # Project dependencies
 ├── train.py                       # Training pipeline & model exporter
+├── app.py                         # Convenience launcher for the FastAPI service
 ├── app/
 │   ├── model.py                   # PyTorch BatteryNet architecture
 │   └── main.py                    # FastAPI live serving microservice
@@ -252,18 +256,26 @@ edge_ai_assignment1/
 ## 14. How to Set Up & Run the Project
 
 ### Environment Setup
-Create and activate the conda environment:
+Create and activate the repository-local virtual environment.
+
+**GitHub Codespaces / Linux:**
 ```bash
-conda create -n edgeai1 python=3.11 -y
-conda activate edgeai1
-pip install -r requirements.txt jupyter ipykernel
-python -m ipykernel install --user --name edgeai1 --display-name "Python (edgeai1)"
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-### Train the Neural Network
-Train the baseline model on Team 3 data:
+**Windows PowerShell:**
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+### Retrain the Selected Architecture
+The checked-in serving checkpoint is the repeatability experiment's 16-16 seed-1 model. Retraining writes new weights and configuration to `model/` and replaces that checkpoint; the following command trains a new seed-0 16-16 model, so its validation metric will differ from 4.27 days:
 ```bash
-python train.py --team 3 --hidden 32,32 --epochs 1500
+python train.py --team 3 --hidden 16,16 --epochs 1500
 ```
 
 ### Reproduce Architecture Experiments
@@ -280,7 +292,7 @@ python experiments/shortlist_repeatability.py
 ### Start the Live FastAPI Server
 Launch the local API server:
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+python app.py
 ```
 * Interactive API Documentation: `http://localhost:8000/docs`
 * Health Check: `http://localhost:8000/health`

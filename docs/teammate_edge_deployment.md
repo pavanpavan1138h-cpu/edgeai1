@@ -52,22 +52,22 @@ To serve our trained model for application and testing purposes, the project pro
    {
      "status": "ok",
      "team": 3,
-     "params": 1281,
-     "val_mae": 4.13
+     "params": 385,
+     "val_mae": 4.27
    }
    ```
 2. **`GET /model_info`:** Computes dynamic per-layer statistics directly from the loaded model (`net.net`):
    ```json
    {
      "layers": [
-       {"name": "linear1", "in": 5, "out": 32, "params": 192, "bytes_f32": 768, "macs": 160},
-       {"name": "linear2", "in": 32, "out": 32, "params": 1056, "bytes_f32": 4224, "macs": 1024},
-       {"name": "linear3", "in": 32, "out": 1, "params": 33, "bytes_f32": 132, "macs": 32}
+       {"name": "linear1", "in": 5, "out": 16, "params": 96, "bytes_f32": 384, "macs": 80},
+       {"name": "linear2", "in": 16, "out": 16, "params": 272, "bytes_f32": 1088, "macs": 256},
+       {"name": "linear3", "in": 16, "out": 1, "params": 17, "bytes_f32": 68, "macs": 16}
      ],
-     "total_params": 1281,
-     "total_bytes_f32": 5124,
-     "total_bytes_int8": 1281,
-     "total_macs": 1216,
+     "total_params": 385,
+     "total_bytes_f32": 1540,
+     "total_bytes_int8": 385,
+     "total_macs": 352,
      "fits_300kb_sram_f32": true,
      "fits_300kb_sram_int8": true
    }
@@ -116,6 +116,30 @@ This script measures:
 * Network and framework overhead:
   $$\text{Latency}_{\text{network}} = \text{Round Trip Time} - \text{server\_total}$$
 
+### Current Local Benchmark Results (Active 16-16 Checkpoint)
+
+The active 16-16 checkpoint was benchmarked locally on 2026-11-21 using 200 `/predict` requests:
+
+* Cold first request: 16.4 ms round trip
+* Warm p50 round trip: 2.194 ms
+* Warm p95 round trip: 3.735 ms
+* Warm p99 round trip: 5.174 ms
+* Warm p50 server total: 0.257 ms
+* Warm p50 inference stage: 0.173 ms
+* Full measurements: [`benchmark_results_16x16_selected_model.csv`](../benchmark_results_16x16_selected_model.csv)
+
+### Historical Local Benchmark Results (32-32 Reference Model)
+
+The earlier 32-32 reference checkpoint benchmark is retained for comparison:
+
+* Cold first request: 20.1 ms round trip
+* Warm p50 round trip: 2.634 ms
+* Warm p95 round trip: 3.789 ms
+* Warm p99 round trip: 4.507 ms
+* Warm p50 server total: 0.332 ms
+* Warm p50 inference stage: 0.229 ms
+* Full measurements: [`benchmark_results_32x32_reference_model.csv`](../benchmark_results_32x32_reference_model.csv)
+
 ---
 
 ## 4. Theoretical Edge Hardware Feasibility: ESP32-S3 Analysis (Conceptual Study)
@@ -129,16 +153,16 @@ The target edge microcontroller archetype considered in this course is the **Esp
 * **External PSRAM:** $8\text{ MB}$ (accessible over SPI/octal-SPI, slower than internal SRAM)
 * **Flash Memory:** $16\text{ MB}$
 
-### Theoretical Sizing Analysis (Baseline Model: 1,281 parameters):
+### Theoretical Sizing Analysis (Selected Model: 385 parameters):
 | Metric | Float32 Representation | Int8 Quantized Representation | ESP32-S3 Budget | Fits in SRAM? |
 | :--- | :---: | :---: | :---: | :---: |
-| **Model Weight Storage** | $5,124\text{ bytes}\ (\approx 5.0\text{ KB})$ | $1,281\text{ bytes}\ (\approx 1.25\text{ KB})$ | $300\text{ KB}$ | **YES ($1.7\%$ of SRAM)** |
-| **Peak Activation Memory** | $32 \times 4 = 128\text{ bytes}$ | $32 \times 1 = 32\text{ bytes}$ | $300\text{ KB}$ | **YES ($< 0.1\%$ of SRAM)** |
-| **Inference MACs** | $1,216\text{ MACs}$ | $1,216\text{ MACs}$ | $\sim 480\text{ MIPS}$ | **YES ($< 0.1\text{ ms}$)** |
+| **Model Weight Storage** | $1,540\text{ bytes}\ (\approx 1.50\text{ KB})$ | $385\text{ bytes}\ (\approx 0.38\text{ KB})$ | $300\text{ KB}$ | **YES ($0.5\%$ of SRAM)** |
+| **Peak Activation Memory** | $16 \times 4 = 64\text{ bytes}$ | $16 \times 1 = 16\text{ bytes}$ | $300\text{ KB}$ | **YES ($< 0.1\%$ of SRAM)** |
+| **Inference MACs** | $352\text{ MACs}$ | $352\text{ MACs}$ | $\sim 480\text{ MIPS}$ | **YES ($< 0.1\text{ ms}$)** |
 
 ### Theoretical Edge AI Takeaways:
-1. **Comfortable Memory Margin:** The baseline model requires only $5.12\text{ KB}$ for weights and $128\text{ bytes}$ for activation buffers, leaving $> 98\%$ of SRAM available for networking buffers, RTOS tasks, and application logic.
-2. **Minimal Computational Load:** At $1,216\text{ MACs}$, computing one prediction consumes fewer than $10,000$ clock cycles on a $240\text{ MHz}$ core, requiring microjoules of energy.
+1. **Comfortable Memory Margin:** The selected model requires only $1.54\text{ KB}$ for weights and $64\text{ bytes}$ for activation buffers, leaving over $99\%$ of the stated SRAM budget for networking buffers, RTOS tasks, and application logic.
+2. **Minimal Computational Load:** At $352\text{ MACs}$, computing one prediction consumes fewer than $10,000$ clock cycles on a $240\text{ MHz}$ core, requiring microjoules of energy.
 
 ---
 
