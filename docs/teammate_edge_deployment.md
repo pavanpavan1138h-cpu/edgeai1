@@ -105,6 +105,19 @@ To analyze request efficiency and answer the engineering question (*"Where does 
 * **`t["build"]`:** Formatting output dictionary and serializing JSON response.
 * **`t["server_total"]`:** Total internal server-side processing duration.
 
+### Containerized API Run
+
+The runtime container installs only the packages needed to serve the API and copies the active model/configuration into the image. From the repository root, with Docker running:
+
+```bash
+docker compose up --build -d
+docker compose ps
+curl http://localhost:8000/health
+curl http://localhost:8000/model_info
+```
+
+Open `http://localhost:8000/docs` to try the endpoints. Stop the service with `docker compose down`. The image build downloads Python dependencies, so the build environment needs access to the configured package indexes. The Codespaces devcontainer enables Docker-in-Docker; rebuild the Codespace after changing its Docker feature.
+
 ### External Benchmarking with `client/bench.py`:
 When running API inference tests, we benchmark the running service using the client script:
 ```bash

@@ -298,6 +298,28 @@ python app.py
 * Health Check: `http://localhost:8000/health`
 * Edge Model Info: `http://localhost:8000/model_info`
 
+### Run the API with Docker
+Docker runs the API with its runtime dependencies and the selected 16–16 checkpoint in an isolated container. Docker Desktop (or a Docker-enabled Codespace) must be running.
+
+Build and start the service:
+```bash
+docker compose up --build -d
+```
+
+Verify the container and API:
+```bash
+docker compose ps
+curl http://localhost:8000/health
+curl http://localhost:8000/model_info
+```
+
+Open `http://localhost:8000/docs` to try the endpoints. Stop the service with:
+```bash
+docker compose down
+```
+
+In GitHub Codespaces, rebuild the dev container after the Docker-in-Docker feature is added, then run the same Compose commands in the Codespace terminal. Open forwarded port 8000 from the Ports tab.
+
 ### Run Client Benchmarks
 Benchmark latency percentiles (p50/p95/p99) from a client terminal:
 ```bash
