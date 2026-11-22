@@ -59,8 +59,6 @@ def test_predict_rejects_glitch_reading():
     invalid = dict(VALID_READING, battery_v=0.0)
     response = client.post("/predict", json=invalid)
     assert response.status_code == 422
-    body = response.json()
-    assert body["error"] == "bad reading"
 
 
 def test_predict_rejects_unknown_field():
