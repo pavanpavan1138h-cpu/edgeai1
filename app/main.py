@@ -126,10 +126,10 @@ async def run(request: Request, schema):
 
 
 @app.post("/predict")
-async def predict(request: Request):
+async def predict(request: Request, reading: Reading):
     return await run(request, Reading)
 
 
 @app.post("/predict_batch")
-async def predict_batch(request: Request):
+async def predict_batch(request: Request, batch: Batch):
     return await run(request, Batch)
