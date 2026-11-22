@@ -15,7 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from fastapi import FastAPI, Request, Body
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from torch import nn
@@ -61,6 +61,30 @@ class Batch(BaseModel):
 
 
 app = FastAPI(title="Doorbell battery API")
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+
+    openapi_schema["paths"]["/predict"]["post"]["requestBody"]["content"]["application/json"]["example"] = {
+        "battery_v": 3.85,
+        "temp_c": 25.0,
+        "rings_per_day": 15,
+        "wifi_rssi_dbm": -65,
+        "age_months": 12
+    }
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 ms = lambda t0: round((time.perf_counter() - t0) * 1000, 3)
 
 
@@ -137,24 +161,7 @@ async def run(request: Request, schema):
 
 
 @app.post("/predict")
-async def predict(
-    request: Request,
-    reading: Reading = Body(
-        ...,
-        examples={
-            "realistic": {
-                "summary": "Realistic doorbell reading",
-                "value": {
-                    "battery_v": 3.85,
-                    "temp_c": 25.0,
-                    "rings_per_day": 15,
-                    "wifi_rssi_dbm": -65,
-                    "age_months": 12
-                }
-            }
-        }
-    )
-):
+async def predict(request: Request, reading: Reading):
     return await run(request, Reading)
 
 
