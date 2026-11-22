@@ -137,7 +137,19 @@ async def run(request: Request, schema):
 
 
 @app.post("/predict")
-async def predict(request: Request, reading: Reading):
+async def predict(
+    request: Request,
+    reading: Reading = Body(
+        ...,
+        example={
+            "battery_v": 3.85,
+            "temp_c": 25.0,
+            "rings_per_day": 15,
+            "wifi_rssi_dbm": -65,
+            "age_months": 12
+        }
+    )
+):
     return await run(request, Reading)
 
 
