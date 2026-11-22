@@ -34,7 +34,18 @@ N_PARAMS = sum(p.numel() for p in net.parameters())
 
 
 class Reading(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "battery_v": 3.85,
+                "temp_c": 25.0,
+                "rings_per_day": 15,
+                "wifi_rssi_dbm": -65,
+                "age_months": 12
+            }
+        }
+    )
 
     battery_v: float = Field(ge=3.0, le=4.3)
     temp_c: float = Field(ge=-25.0, le=60.0)
