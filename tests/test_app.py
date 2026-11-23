@@ -55,6 +55,16 @@ def test_predict_returns_prediction_and_stage_timings():
     }
 
 
+def test_openapi_documents_predict_request_body():
+    response = client.get("/openapi.json")
+
+    assert response.status_code == 200
+    request_body = response.json()["paths"]["/predict"]["post"]["requestBody"]
+    json_content = request_body["content"]["application/json"]
+    assert json_content["schema"]["properties"].keys() == VALID_READING.keys()
+    assert json_content["example"]["battery_v"] == 3.85
+
+
 def test_predict_rejects_glitch_reading():
     invalid = dict(VALID_READING, battery_v=0.0)
     response = client.post("/predict", json=invalid)
