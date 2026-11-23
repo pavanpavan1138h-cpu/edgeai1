@@ -1,0 +1,4 @@
+architecture,hidden_layers,trainable_params,macs,seeds_evaluated,mean_val_mae,std_val_mae,min_val_mae,max_val_mae,val_mae_range,mean_val_mse,mean_val_rmse,mean_low_battery_mae,std_low_battery_mae,mean_train_mae,mean_signed_error,mean_duration_sec
+"2-Layer (8, 8)",2,129,112,5,5.6551,1.3166,4.9083,7.9941,3.0858,66.4868,8.0057,1.8028,0.5089,5.304,-0.1365,4.5
+"2-Layer (16, 16)",2,385,352,5,4.4549,0.2005,4.2742,4.7758,0.5016,44.186,6.6435,1.2213,0.2526,4.0125,0.2667,4.84
+"2-Layer (32, 32)",2,1281,1216,5,4.2575,0.1556,4.101,4.4895,0.3885,39.6999,6.2959,1.2766,0.2332,3.5014,-0.326,4.97

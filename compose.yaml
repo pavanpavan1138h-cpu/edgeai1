@@ -1,0 +1,9 @@
+services:
+  battery-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: edgeai1-battery-api:latest
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

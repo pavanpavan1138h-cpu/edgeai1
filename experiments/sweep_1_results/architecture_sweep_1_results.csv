@@ -1,0 +1,11 @@
+architecture,hidden_layers,layer_widths,trainable_params,macs,fp32_memory_bytes,int8_memory_bytes,final_train_mae,final_train_mse,final_val_mae,final_val_mse,final_val_rmse,best_val_mae,best_epoch,final_epoch,training_duration_sec,convergence_notes,pareto_optimal
+1-Layer (4),1,4,29,24,116,29,9.6675,173.0794,10.5281,193.4511,13.9087,10.525,1490,1499,3.37,None (Stable convergence),True
+1-Layer (8),1,8,57,48,228,57,13.8813,375.5823,15.6188,465.3688,21.5724,15.4722,490,1499,3.36,None (Stable convergence),False
+1-Layer (16),1,16,113,96,452,113,13.8373,373.6337,15.5337,460.1518,21.4511,15.4904,380,1499,3.51,None (Stable convergence),False
+1-Layer (32),1,32,225,192,900,225,6.7585,80.6049,7.2188,94.93,9.7432,7.2188,1499,1499,3.56,None (Stable convergence),False
+1-Layer (64),1,64,449,384,1796,449,13.838,372.4198,15.5177,460.0172,21.448,15.446,540,1499,3.67,None (Stable convergence),False
+"2-Layer (4, 4)",2,"4, 4",49,40,196,49,7.5526,128.594,8.076,126.4022,11.2429,7.9562,630,1499,4.36,None (Stable convergence),True
+"2-Layer (8, 8)",2,"8, 8",129,112,516,129,4.5273,43.537,5.0775,53.3719,7.3056,4.8901,720,1499,4.57,None (Stable convergence),True
+"2-Layer (16, 16)",2,"16, 16",385,352,1540,385,4.2025,41.0029,4.7758,49.3021,7.0215,4.6756,1470,1499,4.64,None (Stable convergence),True
+"2-Layer (32, 32)",2,"32, 32",1281,1216,5124,1281,3.6015,30.2853,4.1275,36.2441,6.0203,3.9845,1120,1499,4.77,None (Stable convergence),True
+"2-Layer (64, 64)",2,"64, 64",4609,4480,18436,4609,3.2734,22.4879,4.5491,44.698,6.6857,4.163,360,1499,6.48,None (Stable convergence),False
