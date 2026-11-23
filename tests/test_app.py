@@ -59,16 +59,9 @@ def test_openapi_documents_predict_request_body():
     response = client.get("/openapi.json")
 
     assert response.status_code == 200
-    data = response.json()
-    request_body = data["paths"]["/predict"]["post"]["requestBody"]
+    request_body = response.json()["paths"]["/predict"]["post"]["requestBody"]
     json_content = request_body["content"]["application/json"]
-    schema = json_content["schema"]
-    if "$ref" in schema:
-        ref_path = schema["$ref"].lstrip("#/").split("/")
-        schema = data
-        for part in ref_path:
-            schema = schema[part]
-    assert schema["properties"].keys() == VALID_READING.keys()
+    assert json_content["schema"]["properties"].keys() == VALID_READING.keys()
     assert json_content["example"]["battery_v"] == 3.85
 
 

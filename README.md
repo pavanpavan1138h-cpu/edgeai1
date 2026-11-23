@@ -13,7 +13,7 @@ This repository contains the data analysis, model experiments, selected PyTorch 
 | 1 | Pavan R | 1RV24CI081
 | 2 | Shreyank D K | 1RV24CI119
 | 3 | Adarsh K R | 1RV24CI009
-| 4 | Ankitha A | 1RV25CI402
+| 4 | Ankitha A | 1RV24CI402
 
 Team name: **Phoenix**.
 
