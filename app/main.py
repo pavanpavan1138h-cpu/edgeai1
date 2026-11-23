@@ -85,6 +85,31 @@ def custom_openapi():
     return app.openapi_schema
 
 app.openapi = custom_openapi
+
+from fastapi.openapi.utils import get_openapi
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        routes=app.routes,
+    )
+
+    openapi_schema["paths"]["/predict"]["post"]["requestBody"]["content"]["application/json"]["example"] = {
+        "battery_v": 3.85,
+        "temp_c": 25.0,
+        "rings_per_day": 15,
+        "wifi_rssi_dbm": -65,
+        "age_months": 12
+    }
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 ms = lambda t0: round((time.perf_counter() - t0) * 1000, 3)
 
 
